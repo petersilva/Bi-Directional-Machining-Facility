@@ -1,0 +1,11 @@
+
+TODO:
+ -- does not check return status of Key commands.
+ 
+
+Done:
+  -- encode binary in intelhex binary format.
+  -- transliterate .hex into binary format.
+  -- sends them one a a time waiting for successful receipt. signal.
+
+  -- sends three character key commands.
