@@ -68,10 +68,7 @@ class bmf:
         self.dbg = dbg | 2   # append supression of ack's.
      else:
         self.dbg = dbg
-        if platform.system() == 'Windows' :
-           self.serial = serial.Serial_for_url(dev, baudrate=speed)
-        else:
-           self.serial = serial.Serial(dev,baudrate=speed)
+        self.serial = serial.Serial(dev,baudrate=speed)
      
   def writechk(self,buf,message):
      self.serial.write(buf)
@@ -128,7 +125,7 @@ class bmf:
         cksum=0
         for s in chunk :
             cksum += ord(s) 
-        cksum = 256 - (cksum & 0xff)
+        cksum = (256 - (cksum & 0xff)) & 0xff
 
         # build binary record, including checksum and padding.
         binrec = ':' + chunk + chr(cksum) 

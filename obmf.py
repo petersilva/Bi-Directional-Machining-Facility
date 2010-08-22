@@ -39,6 +39,7 @@ import getopt
 
 port="COM2:"
 speed=38400
+dbg=2
 
 opts, args = getopt.getopt(sys.argv[1:],"D:p:s:V",[ 
 "dbg=", "debug=", "port=", "speed=", "version" ])
