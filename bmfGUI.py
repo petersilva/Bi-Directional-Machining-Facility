@@ -33,8 +33,8 @@ class bmfGUI(QtGui.QMainWindow):
                   int(self.stg.bps.currentText()))
   
   def sendfile(self):
-    filename = QtGui.QFileDialog.getOpenFileName(self, "Find Files",
-                QtCore.QDir.currentPath())
+    filename = QtGui.QFileDialog.getOpenFileName(self, 
+                  "Find Files", QtCore.QDir.currentPath())
 
     print "filename: ", filename
 
@@ -44,7 +44,10 @@ class bmfGUI(QtGui.QMainWindow):
          if (filename[-4:] == '.hex'):
               self.bmf.sendbulkhex(filename)
          else:
-              self.bmf.sendbulkbin(filename)
+              baseaddress, ok = QtGui.QInputDialog.getInteger(self,
+                   "Où placer les données", "Addresse", 0x4000, 0, 0xffff)
+              if ok:
+                self.bmf.sendbulkbin(filename,baseaddress)
 
 
 
@@ -109,12 +112,12 @@ class bmfGUI(QtGui.QMainWindow):
     kp1layout.addWidget(self.kp1.plusminus,3,2)
     self.connect(self.kp1.plusminus, QtCore.SIGNAL('clicked()'), self.__sendkey)
 
-    self.tab.addTab(self.kp1,"Keypad 1")
+    self.tab.addTab(self.kp1,"Numbers")
 
   def __initKP2(self):
 
     self.kp2 = QtGui.QWidget()
-    self.kp2.setObjectName("Keypad 1")
+    self.kp2.setObjectName("Commands")
 
     kp2layout=QtGui.QGridLayout(self.kp2)
     kp2layout.setColumnStretch(0,19)
@@ -182,7 +185,7 @@ class bmfGUI(QtGui.QMainWindow):
     kp2layout.addWidget(self.kp2.send,4,2)
     self.connect(self.kp2.send, QtCore.SIGNAL('clicked()'), self.sendfile)
 
-    self.tab.addTab(self.kp2,"Keypad 2")
+    self.tab.addTab(self.kp2,"Commands")
 
   def __initSerialPortSettings(self):
     self.stg = QtGui.QWidget()
@@ -287,7 +290,7 @@ class bmfGUI(QtGui.QMainWindow):
      #self.mainlayout.setMinimumHeight(300)
   
      
-     self.__initKP1()     
      self.__initKP2()     
+     self.__initKP1()     
      self.__initSerialPortSettings()     
    

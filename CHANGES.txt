@@ -1,9 +1,17 @@
 
 TODO:
- -- does not check return status of Key commands.
- 
+  -- some sort of callback for GUI message posting? 
+     (writechk just prints errors to stdout...)
+
 
 Done:
+
+2010/08/22:
+  -- check return status of all record writes.
+  -- another dialog to specify start address for bulk xfers.
+  -- default command now is to start GUI.
+
+2010/08/21:
   -- encode binary in intelhex binary format.
   -- transliterate .hex into binary format.
   -- sends them one a a time waiting for successful receipt. signal.

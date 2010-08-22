@@ -20,7 +20,10 @@ def usage():
   obmf <options> command <arguments> 
     -p / --port = "COM2:", or "/dev/ttyS0"
     -s / --speed = 38400 
-      
+    -D / --debug = <flags>    
+           flags:  1 - simulate: port is a write only file.
+		   2 - suppress/ignore acknowledgements
+                          (implied by 1)
   command is one of:
         view  - start the keyboard GUI.
         send file.hex  - write a file in intel hex format 0
@@ -37,11 +40,13 @@ import getopt
 port="COM2:"
 speed=38400
 
-opts, args = getopt.getopt(sys.argv[1:],"p:s:V",[ 
-"port=", "speed=", "version" ])
+opts, args = getopt.getopt(sys.argv[1:],"D:p:s:V",[ 
+"dbg=", "debug=", "port=", "speed=", "version" ])
 
 for o, a in opts:
-  if o in ( "-p", "--port"):
+  if o in ( "-D", "--dbg", "--debug"):
+     dbg = int(a)
+  elif o in ( "-p", "--port"):
      port = a
   elif o in ( "-s", "--speed"):
      speed = int(a)
@@ -53,13 +58,16 @@ for o, a in opts:
 
 print "port: %s, speed: %d\n", port, speed
 if port != None:
-  b = bmf.bmf(port,speed)
+  b = bmf.bmf(port,speed,dbg)
+
+print 'len args is:', len(args)
 
 if len(args) == 0:
-  usage()
-  sys.exit()
+  cmd = 'view'
+else:
+  cmd = args[0]
 
-if args[0] == 'view':
+if cmd == 'view':
   from PyQt4 import QtGui
   from PyQt4 import QtCore
   from bmfGUI import bmfGUI
@@ -69,10 +77,10 @@ if args[0] == 'view':
   tb.show()
   app.exec_()
 
-elif ( args[0] == 'key' ):
+elif cmd  == 'key' :
   print "Send a key"
   b.sendKey(args[1])
-elif args[0] == 'send':
+elif cmd == 'send':
   print "Send Intel Hex file"
   filename = args[1]
   if (filename[-4:] == '.hex'):

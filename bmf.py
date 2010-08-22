@@ -50,7 +50,7 @@ class bmf:
 
   """
 
-  def __init__(self,dev,speed=38400):
+  def __init__(self,dev,speed=38400,dbg=0):
      """
        device = port to open. ("COM2:" or "/dev/ttyUSB0", etc...)
        speed  = baudrate for communications.
@@ -61,20 +61,36 @@ class bmf:
      """
      self.speed = speed
      self.dev = dev
-     if speed == 0:
+
+     if dbg & 1:
+        print "opening in simulation mode, writing binary to ", dev
         self.serial = open(dev,'w')
+        self.dbg = dbg | 2   # append supression of ack's.
      else:
-        #self.serial = serial.Serial_for_url(port=dev, baudrate=speed)
-        self.serial = serial.Serial(dev,baudrate=speed)
+        self.dbg = dbg
+        if platform.system() == 'Windows' :
+           self.serial = serial.Serial_for_url(dev, baudrate=speed)
+        else:
+           self.serial = serial.Serial(dev,baudrate=speed)
      
+  def writechk(self,buf,message):
+     self.serial.write(buf)
+     if (self.dbg & 2) == 0:
+        response = self.serial.read(3)
+        if response[0] != '0' : 
+           print message
+
+
 
   def sendKey(self,str):
      key=keycodes[str]
-     print "str: %s, key: %c\n" % ( str, key )
-     self.serial.write("%c%c%c" % ( FRAME_TYPE_KEY, key, TRIGGER_INTERRUPT ))
+     print "Sending Key for +%s+, key: %c" % ( str, key )
+     self.writechk(
+          "%c%c%c" % ( FRAME_TYPE_KEY, key, TRIGGER_INTERRUPT ),
+           "error on send of key: %s" % str
+     )
 
-
-  def sendbulkbin(self,data,baseaddress=4000):
+  def sendbulkbinbuffer(self,data,baseaddress=4000):
      """
        encode in intel hex format.  stuff with nuls to 24 chars.
        use given baseaddress and count upwards.
@@ -100,11 +116,11 @@ class bmf:
 
         # build chunk of data for xfer...
         addr=baseaddress + i
-        #print "addr: %04x\n" % addr
+        print "addr: %04x" % addr
         address1= (addr & 0xff00) >> 8
         address2= (addr & 0x00ff)
-        #print "last-i=%d, address1=%02x, address2=%02x\n" % \
-        #       (last-i,address1,address2)
+        print "last-i=%d, address1=%02x, address2=%02x" % \
+               (last-i,address1,address2)
         prefix = "%c%c%c\0" % (last-i,address1,address2)
         chunk = prefix + data[i:last]
 
@@ -119,11 +135,19 @@ class bmf:
         padlen = BMF_BULK_RECORD_LENGTH - len(binrec) 
         binrec += '\0' * padlen
 
-        self.serial.write(binrec)
+        self.writechk( binrec,
+              "error between bytes %d and %d" % (i,last) )
         i=last
 
      # switch back to command mode...
-     self.serial.write(':' + '\00' * 3 + "\x01\xFF" + '\0' * 18 )   
+     self.writechk( ':' + '\00' * 3 + "\x01\xFF" + '\0' * 18,
+              "error on return to command mode" )   
+
+  def sendbulkbin(self,filename,baseaddress=0x4000):
+    f=open(filename, 'r')  # might need binary mode 'b' under windows.
+    data=f.read()
+    f.close()
+    self.sendbulkbinbuffer(data,baseaddress)
 
 
   def __hexrecord2bin(self,record):
@@ -145,6 +169,7 @@ class bmf:
     return( record_to_write )
 
 
+    
 
   def sendbulkhex(self,filename):
      """
@@ -162,19 +187,15 @@ class bmf:
      for hexstringrecord in f :
          print "hexstringrecord: ", hexstringrecord
          binrec = self.__hexrecord2bin(hexstringrecord)
-         self.serial.write(binrec) 
-         
-         # check that other end processed the record OK. '0> ' status '0' is OK
+
          line_number +=1
-         if self.speed > 0:
-            response = self.serial.read(3)
-            if response[0] != '0' : 
-              print "error on line %d\n" % line_number
-              break 
+         self.writechk(binrec, "error on line %d" % line_number )
+         # FIXME: does not abort transfer... on error.
 
          byte_count += len(binrec) 
 
-     #pray hex file is well-formed so switch back to command mode happens.
+     #FIXME: pray hex file is well-formed so switch back to command 
+     #       mode happens.
      #print( "lines: %d, bytes: %d written." % ( line_number, byte_count ) )
      f.close()
 
@@ -185,12 +206,12 @@ class bmf:
 
   def __getattr__(self,name):
      if name == 'keys':
-       return(self.keycodes.keys())
+       return(keycodes.keys())
 
 if __name__ == '__main__':
   
    p = bmf("toto.bin",0)
    p.sendbulkhex("../intel_hex_sample.hex")
-   p.sendbulkbin("\xCD\x03\x70\x21\x11\x00\xF9\xCD\x22\x72\xCD\x7C\x71\x3E\x52\x32\x20\xf0\x3e\x48\x32\x21\xf0\x3e\x52\x32\x22\xf0\x3e\x54\x32\x40\xf0\x3e\x48\x32\x41\xf0\x3e\x52\x32\x42\xf0\x3e\x49\x32\x60\xf0\xCC\xEE", 0x7000 )
+   p.sendbulkbinbuffer("\xCD\x03\x70\x21\x11\x00\xF9\xCD\x22\x72\xCD\x7C\x71\x3E\x52\x32\x20\xf0\x3e\x48\x32\x21\xf0\x3e\x52\x32\x22\xf0\x3e\x54\x32\x40\xf0\x3e\x48\x32\x41\xf0\x3e\x52\x32\x42\xf0\x3e\x49\x32\x60\xf0\xCC\xEE", 0x7000 )
+   p.sendbulkbin("../k.asm")
    print p.keys
-
