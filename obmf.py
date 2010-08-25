@@ -84,7 +84,7 @@ elif cmd  == 'key' :
 elif cmd == 'send':
   print "Send Intel Hex file"
   filename = args[1]
-  if (filename[-4:] == '.hex'):
+  if (filename[-4:].lower() == '.hex'):
      b.sendbulkhex(filename)
   else:
      b.sendbulkbin(filename)

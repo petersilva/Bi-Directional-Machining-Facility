@@ -41,7 +41,7 @@ class bmfGUI(QtGui.QMainWindow):
     if filename == None:
         print "send aborted"
     else:
-         if (filename[-4:] == '.hex'):
+         if (str(filename[-4:]).lower() == '.hex'):
               self.bmf.sendbulkhex(filename)
          else:
               baseaddress, ok = QtGui.QInputDialog.getInteger(self,
@@ -255,23 +255,19 @@ class bmfGUI(QtGui.QMainWindow):
      QtGui.QMainWindow.__init__(self)
   
      self.bmf=bmf
-     print "1"
      self.setMinimumSize(300, 350)
      self.setSizePolicy( QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Expanding )
 
-     print "2"
      self.setWindowTitle('BMF - Panel')
      exit = QtGui.QAction(QtGui.QIcon('icons/exit.png'), 'Exit', self)
      exit.setShortcut('Ctrl+Q')
      exit.setStatusTip('Exit application')
      self.connect(exit, QtCore.SIGNAL('triggered()'), QtCore.SLOT('close()'))
 
-     print "3"
      menubar = self.menuBar()
      file = menubar.addMenu('&File')
      file.addAction(exit)
 
-     print "4"
      help = menubar.addMenu('&Help')
 
      
@@ -286,10 +282,6 @@ class bmfGUI(QtGui.QMainWindow):
 
      self.setCentralWidget(self.tab)
 
-     #self.mainlayout.setMinimumWidth(300)
-     #self.mainlayout.setMinimumHeight(300)
-  
-     
      self.__initKP2()     
      self.__initKP1()     
      self.__initSerialPortSettings()     

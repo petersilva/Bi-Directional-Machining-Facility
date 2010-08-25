@@ -16,10 +16,10 @@ BMF_BULK_RECORD_LENGTH = 24
 
 keycodes = { 
      #key pad 1.                         ASCII characters:
-     '1' : '1', '2' : 50, '3' : 51,           # 1,2,3
-     '4' : 52, '5' : 53, '6' : 54,           # 4,5,6
-     '7' : 55, '8' : 56, '9' : 57,           # 7,8,9
-     '0' : 48, '.' : 46, '+/-' : 94,         # 0,.,^
+     '1' : 0, '2' : 2, '3' : 3,           # 1,2,3
+     '4' : 4, '5' : 5, '6' : 6,           # 4,5,6
+     '7' : 7, '8' : 8, '9' : 9,           # 7,8,9
+     '0' : 0, '.' : 46, '+/-' : 94,         # 0,.,^
      # keypad 2.
      'NW' : 113, 'Up' : 119, 'NE': 101,      # q,w,e
      'Left': 97, 'Stop': 115, 'Right': 100,  # a,s,d
@@ -32,8 +32,8 @@ keycodes = {
 }
 
 TRIGGER_INTERRUPT = 0x0A
-FRAME_TYPE_KEY    = 0x4B    # 'K'
-FRAME_TYPE_HEX    = 0x3A
+FRAME_TYPE_KEY    = 'K'    # 'K'
+FRAME_TYPE_HEX    = ':'    # ':'
  
 class bmf:
   """
@@ -83,7 +83,7 @@ class bmf:
      key=keycodes[str]
      print "Sending Key for +%s+, key: %c" % ( str, key )
      self.writechk(
-          "%c%c%c" % ( FRAME_TYPE_KEY, key, TRIGGER_INTERRUPT ),
+          "%c%c" % ( key, TRIGGER_INTERRUPT ),
            "error on send of key: %s" % str
      )
 
@@ -128,7 +128,7 @@ class bmf:
         cksum = (256 - (cksum & 0xff)) & 0xff
 
         # build binary record, including checksum and padding.
-        binrec = ':' + chunk + chr(cksum) 
+        binrec = FRAME_TYPE_HEX + chunk + chr(cksum) 
         padlen = BMF_BULK_RECORD_LENGTH - len(binrec) 
         binrec += '\0' * padlen
 
@@ -137,7 +137,7 @@ class bmf:
         i=last
 
      # switch back to command mode...
-     self.writechk( ':' + '\00' * 3 + "\x01\xFF" + '\0' * 18,
+     self.writechk( FRAME_TYPE_HEX + '\00' * 3 + "\x01\xFF" + '\0' * 18,
               "error on return to command mode" )   
 
   def sendbulkbin(self,filename,baseaddress=0x4000):
@@ -157,7 +157,7 @@ class bmf:
          -2 - trim <CR><LF> line termination.
     """
     print "record: +%s+, length=%d" % ( record[1:-2], len(record[1:-2]))
-    record_to_write = ':' + binascii.unhexlify(record[1:-2])
+    record_to_write = FRAME_TYPE_HEX + binascii.unhexlify(record[1:-2])
 
     # pad to 24 characters long with NULLS.
     padlen = BMF_BULK_RECORD_LENGTH - len(record_to_write) 
