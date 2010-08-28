@@ -10,13 +10,14 @@ named COPYING in the root of the source directory tree.
 
 import serial
 import binascii
+import platform
 
 
 BMF_BULK_RECORD_LENGTH = 24 
 
 keycodes = { 
      #key pad 1.                         ASCII characters:
-     '1' : 0, '2' : 2, '3' : 3,           # 1,2,3
+     '1' : 1, '2' : 2, '3' : 3,           # 1,2,3
      '4' : 4, '5' : 5, '6' : 6,           # 4,5,6
      '7' : 7, '8' : 8, '9' : 9,           # 7,8,9
      '0' : 0, '.' : 46, '+/-' : 94,         # 0,.,^
@@ -28,7 +29,7 @@ keycodes = {
      'Hi/Lo': 60, 'Origin': 61,
      # commands...
      'Status': 83,  'Reset': 82,             # S,R
-     'Block' : 66,  'Hello': 72,             # B,H  
+     'Block' : 255,  'Hello': 72,             # B,H  
 }
 
 TRIGGER_INTERRUPT = 0x0A
@@ -73,7 +74,7 @@ class bmf:
   def writechk(self,buf,message):
      self.serial.write(buf)
      if (self.dbg & 2) == 0:
-        response = self.serial.read(3)
+        response = self.serial.read(1)
         if response[0] != '0' : 
            print message
 
@@ -156,8 +157,15 @@ class bmf:
           1 - do not convert :
          -2 - trim <CR><LF> line termination.
     """
-    print "record: +%s+, length=%d" % ( record[1:-2], len(record[1:-2]))
-    record_to_write = FRAME_TYPE_HEX + binascii.unhexlify(record[1:-2])
+    if platform.system() == "Windows":
+       end=-1
+    else:
+       end=-2
+
+    rec= record[1:end]
+    
+    print "record: +%s+, length=%d" % ( rec, len(rec))
+    record_to_write = FRAME_TYPE_HEX + binascii.unhexlify(rec)
 
     # pad to 24 characters long with NULLS.
     padlen = BMF_BULK_RECORD_LENGTH - len(record_to_write) 
