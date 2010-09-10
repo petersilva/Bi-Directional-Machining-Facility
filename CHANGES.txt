@@ -1,5 +1,6 @@
 
 TODO:
+  -- get on github. need public ssh key for that.
   -- have protocol for drawing in the char window.
   -- have programmable length of log window, for now it just fills up memory
   -- have font selection fill window in char display
