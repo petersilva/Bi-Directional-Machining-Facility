@@ -71,10 +71,10 @@ else:
 if cmd == 'view':
   from PyQt4 import QtGui
   from PyQt4 import QtCore
-  from bmfGUI import bmfGUI
+  from bmf.GUI import GUI
  
   app = QtGui.QApplication(sys.argv)
-  tb = bmfGUI(b)
+  tb = GUI(b)
   tb.show()
   app.exec_()
 

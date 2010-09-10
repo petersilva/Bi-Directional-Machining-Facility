@@ -26,15 +26,16 @@ keycodes = {
      'Left': 97, 'Stop': 115, 'Right': 100,  # a,s,d
      'SW' : 122, 'Down':120, 'SE':99,        # z,x,c
      '+' : 43,  'Speed': 83, '-': 45,        # +,<,=
-     'Hi/Lo': 60, 'Origin': 61,
+     'Hi/Lo': 60, 'Origin': 61, 'Start/Stop': 62,   # , , >
+     'FF': 255, 'Up': 63, 'Down': 64,
      # commands...
      'Status': 83,  'Reset': 82,             # S,R
      'Block' : 255,  'Hello': 72,             # B,H  
 }
 
 TRIGGER_INTERRUPT = 0x0A
-FRAME_TYPE_KEY    = 'K'    # 'K'
 FRAME_TYPE_HEX    = ':'    # ':'
+FRAME_ACK_OK      = '\x00'
  
 class bmf:
   """
@@ -69,16 +70,19 @@ class bmf:
         self.dbg = dbg | 2   # append supression of ack's.
      else:
         self.dbg = dbg
-        self.serial = serial.Serial(dev,baudrate=speed)
+        self.serial = serial.Serial(dev,baudrate=speed,timeout=10)
      
   def writechk(self,buf,message):
      self.serial.write(buf)
+     self.serial.flush()
      if (self.dbg & 2) == 0:
         response = self.serial.read(1)
-        if response[0] != '0' : 
+        if response[0] != FRAME_ACK_OK : 
            print message
-
-
+        else:
+           print "acknowledged."
+     else:
+        print "simulation, no ack"
 
   def sendKey(self,str):
      key=keycodes[str]
@@ -162,7 +166,7 @@ class bmf:
     else:
        end=-2
 
-    rec= record[1:end]
+    rec=record[1:end]
     
     print "record: +%s+, length=%d" % ( rec, len(rec))
     record_to_write = FRAME_TYPE_HEX + binascii.unhexlify(rec)
