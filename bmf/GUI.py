@@ -316,46 +316,55 @@ class GUI(QtGui.QMainWindow):
     
     self.stg.pslabel.setBuddy(self.stg.portselect)
     stglayout.addWidget(self.stg.pslabel,0,0)
-    stglayout.addWidget(self.stg.portselect,0,1)
+    stglayout.addWidget(self.stg.portselect,0,1,1,3)
 
     self.stg.connect = self.__button('Other', self.stg, self.__otherPort)
-    stglayout.addWidget(self.stg.connect,0,2)
+    stglayout.addWidget(self.stg.connect,0,4,1,1)
 
     # baud
     self.stg.bpslabel = QtGui.QLabel("&Baud:")
     self.stg.bps = QtGui.QComboBox()
-    speeds=[ "300","900","1200","4800","9600","19200","38400","57600","119200", "0" ]
+    speeds=[ "300","900","1200","4800","9600","19200","38400","57600","119200" ]
     self.stg.bps.addItems(speeds)    
     if (self.bmf != None) and (self.bmf.dev != None):
         self.stg.bps.setCurrentIndex( speeds.index(str(self.bmf.speed)))
 
     self.stg.bpslabel.setBuddy(self.stg.bps)
-    stglayout.addWidget(self.stg.bpslabel,1,0)
-    stglayout.addWidget(self.stg.bps,1,2)
+    stglayout.addWidget(self.stg.bpslabel,1,0,1,1)
+    stglayout.addWidget(self.stg.bps,1,2,1,3)
 
+    # Flags
+    self.stg.flaglabel = QtGui.QLabel("Flags:")
+    stglayout.addWidget(self.stg.flaglabel,2,0)
 
-    # Parity
-    #self.stg.even = QtGui.QRadioButton('Even', self.stg)
-    #stglayout.addWidget(self.stg.even,2,0)
-    #self.stg.odd = QtGui.QRadioButton('Odd', self.stg)
-    #stglayout.addWidget(self.stg.odd,2,1)
-    #self.stg.none = QtGui.QRadioButton('None', self.stg)
-    #stglayout.addWidget(self.stg.none,2,2)
+    self.stg.sim = QtGui.QRadioButton('Simulation', self.stg)
+    self.stg.sim.setAutoExclusive(False)
+    stglayout.addWidget(self.stg.sim,3,0,1,2)
+    self.stg.noack = QtGui.QRadioButton('No Ack', self.stg)
+    self.stg.noack.setAutoExclusive(False)
+    stglayout.addWidget(self.stg.noack,3,3,1,2)
+    self.stg.netsrv = QtGui.QRadioButton('Net Server', self.stg)
+    self.stg.netsrv.setAutoExclusive(False)
+    stglayout.addWidget(self.stg.netsrv,4,0,1,2)
+    self.stg.netcli = QtGui.QRadioButton('Net Client', self.stg)
+    self.stg.netcli.setAutoExclusive(False)
+    stglayout.addWidget(self.stg.netcli,4,3,1,2)
 
     self.stg.connect = self.__button('Connect', self.stg, self.__connect)
-    stglayout.addWidget(self.stg.connect,3,0)
+    stglayout.addWidget(self.stg.connect,5,0,1,4)
 
-    self.stg.showlabel = QtGui.QLabel("Show")
-    stglayout.addWidget(self.stg.showlabel,4,1)
+
+    self.stg.showlabel = QtGui.QLabel("Show:")
+    stglayout.addWidget(self.stg.showlabel,6,0)
 
     self.stg.log = self.__button('Log', self.stg, self.log.Show)
-    stglayout.addWidget(self.stg.log,5,0)
+    stglayout.addWidget(self.stg.log,7,0,1,1)
 
     self.stg.dsp = self.__button('Display', self.stg, self.charDisplay.Show)
-    stglayout.addWidget(self.stg.dsp,5,1)
+    stglayout.addWidget(self.stg.dsp,7,1,1,2)
 
     self.stg.cnt = self.__button('Counters', self.stg, self.counters.Show)
-    stglayout.addWidget(self.stg.cnt,5,2)
+    stglayout.addWidget(self.stg.cnt,7,3,1,2)
 
 
     self.tab.addTab(self.stg,"Settings")
