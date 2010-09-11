@@ -133,12 +133,26 @@ class GUI(QtGui.QMainWindow):
     self.__logit( "connecting..." )
     self.__logit( "speed: %s " % self.stg.bps.currentText() )
     self.__logit( "device: %s " % self.stg.portselect.currentText() )
-    return
+    self.__logit( "file write: %d " % self.stg.sim.isChecked() )
+    self.__logit( "no ack: %d " % self.stg.noack.isChecked() )
+    self.__logit( "network server: %d " % self.stg.netsrv.isChecked() )
+    self.__logit( "network client: %d " % self.stg.netcli.isChecked() )
+
+    flags = 0 
+    if self.stg.sim.isChecked() : 
+        flags = flags | 1
+    if self.stg.noack.isChecked(): 
+        flags = flags | 2
+    if self.stg.netsrv.isChecked():
+        flags = flags | 4
+    if self.stg.netcli.isChecked():
+        flags = flags | 8
+    self.__logit( "flags: %02x " % flags )
 
     if self.bmf != None:
        del self.bmf
     self.bmf = bmf.bmf(self.stg.portselect.currentText(), 
-                  int(self.stg.bps.currentText()))
+                  int(self.stg.bps.currentText()),flags)
   
   def sendfile(self):
     filename = QtGui.QFileDialog.getOpenFileName(self, 
@@ -271,9 +285,10 @@ class GUI(QtGui.QMainWindow):
 
   def __otherPort(self):
     op, ok = QtGui.QInputDialog.getText(self,"Other Port", "Port Address")
-    last = self.stg.portselect.count()    
-    self.stg.portselect.addItem(op)    
-    self.stg.portselect.setCurrentIndex(last)
+    if ok:
+      last = self.stg.portselect.count()    
+      self.stg.portselect.addItem(op)    
+      self.stg.portselect.setCurrentIndex(last)
     
 
   def __initSerialPortSettings(self):
@@ -328,6 +343,8 @@ class GUI(QtGui.QMainWindow):
     self.stg.bps.addItems(speeds)    
     if (self.bmf != None) and (self.bmf.dev != None):
         self.stg.bps.setCurrentIndex( speeds.index(str(self.bmf.speed)))
+    else:
+        self.stg.bps.setCurrentIndex( 6 ) # ought to be 38400
 
     self.stg.bpslabel.setBuddy(self.stg.bps)
     stglayout.addWidget(self.stg.bpslabel,1,0,1,1)
@@ -337,7 +354,7 @@ class GUI(QtGui.QMainWindow):
     self.stg.flaglabel = QtGui.QLabel("Flags:")
     stglayout.addWidget(self.stg.flaglabel,2,0)
 
-    self.stg.sim = QtGui.QRadioButton('Simulation', self.stg)
+    self.stg.sim = QtGui.QRadioButton('write file', self.stg)
     self.stg.sim.setAutoExclusive(False)
     stglayout.addWidget(self.stg.sim,3,0,1,2)
     self.stg.noack = QtGui.QRadioButton('No Ack', self.stg)

@@ -26,7 +26,7 @@ class LogWindow(QtGui.QDialog):
      self.messageTable.setItem(0,0, leTime)
      leMsg = QtGui.QTableWidgetItem(msg) 
      self.messageTable.setItem(0,1, leMsg)
-     print self.log_entries
+     #print self.log_entries
      print msg
 
 
