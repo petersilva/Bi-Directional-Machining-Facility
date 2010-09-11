@@ -46,16 +46,19 @@ class GUI(QtGui.QMainWindow):
   def __sendhex(self):
     kk= str(self.tst.hexedit.text())
     try:
-        x = int(kk,16)
+        hxa = map( lambda x: chr(int(x,16)), kk.split(","))
+        #x = int(kk,16)
     except:
-        self.__logit("%s not valid hex number" % kk)
+        self.__logit("%s contains an invalid hex number" % kk)
         return 
 
-    if x > 255:
-	return
+    #only want ASCII characters.
+    #for x in hxa: 
+    #   if int(x) > 255:
+    #	  return
 
-    self.__logit( "%02x code sent" % x )
-    self.bmf.writechk(chr(x),"returned error from send of %02x" % x)
+    self.bmf.writechk(''.join(hxa),"returned error from send of %s" % kk)
+    self.__logit( "%s code sent" % kk )
 
   def __sendToggleKey(self): 
     kk= QtCore.QObject.sender(self)
@@ -255,9 +258,6 @@ class GUI(QtGui.QMainWindow):
     self.kp2.log = self.__button('Log', self.kp2, self.log.Show)
     kp2layout.addWidget(self.kp2.log,5,1)
 
-    self.kp2.ff = self.__button('FF', self.kp2, self.__sendkey)
-    kp2layout.addWidget(self.kp2.ff,5,2)
-
     self.kp2.cd = self.__button('Up', self.kp2, self.__sendkey, self.__goUp)
     kp2layout.addWidget(self.kp2.cd,6,0)
 
@@ -407,7 +407,7 @@ class GUI(QtGui.QMainWindow):
      #self.mainlayout.addWidget(self.counters,0,0)
      self.mainlayout.addWidget(self.counters,1)
      #self.mainlayout.addWidget(self.log,0,1)
-     self.mainlayout.addWidget(self.log,3)
+     self.mainlayout.addWidget(self.log,5)
 
      self.tab = QtGui.QTabWidget(self.mainwin)
      self.__initKP2()     
