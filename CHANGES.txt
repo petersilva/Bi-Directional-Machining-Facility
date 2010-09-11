@@ -1,10 +1,13 @@
 
 TODO:
-  -- get on github. need public ssh key for that.
+  -- make protocol symmetrical
+  -- have it work with sockets, and have two bmf's talk to eachother.
   -- have protocol for drawing in the char window.
   -- have programmable length of log window, for now it just fills up memory
   -- have font selection fill window in char display
-  -- have Testing toggle for acknowledgements.
+  -- have Settings dialog work.
+	-- parity is not covered.
+	-- testing ack toggle.
   -- have toggle buttons visually confirm state.
 
 PC -> Z80
@@ -16,8 +19,23 @@ xx \0a  ->
 telecom:
     compteurs... 16 bit... en milliemes.
 
+unknown/WILL NOT DO:
+  -- get on github. need public ssh key for that.
+  -- decimal in counters.
+     will not match, because have to convert to decimals, and will not match
+     integer counters. 
+     
 
-Done:
+
+
+
+
+DONE:
+  -- starts up with no connection (need not have a bmf object working.)
+  -- 
+
+2010/09/10:
+----------
   -- send arbitrary byte (dialog)
   -- one big fixed window.
   -- compteur x, y, z.   absolut et relative.
@@ -30,7 +48,6 @@ Done:
   -- GUI exposure of writechk.
      (writechk just prints errors to stdout...)
      see status messages at bottom of app window.
-
 
 
 2010/08/22:

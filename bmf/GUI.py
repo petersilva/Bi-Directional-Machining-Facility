@@ -129,11 +129,14 @@ class GUI(QtGui.QMainWindow):
 
   def __connect(self):
     #self.serial.connect( ... with baud etc.. set.
+
     self.__logit( "connecting..." )
     self.__logit( "speed: %s " % self.stg.bps.currentText() )
     self.__logit( "device: %s " % self.stg.portselect.currentText() )
+    return
 
-    del self.bmf
+    if self.bmf != None:
+       del self.bmf
     self.bmf = bmf.bmf(self.stg.portselect.currentText(), 
                   int(self.stg.bps.currentText()))
   
@@ -255,9 +258,6 @@ class GUI(QtGui.QMainWindow):
     self.kp2.ss = self.__button('Start/Stop', self.kp2, self.__sendToggleKey)
     kp2layout.addWidget(self.kp2.ss,5,0)
 
-    self.kp2.log = self.__button('Log', self.kp2, self.log.Show)
-    kp2layout.addWidget(self.kp2.log,5,1)
-
     self.kp2.cd = self.__button('Up', self.kp2, self.__sendkey, self.__goUp)
     kp2layout.addWidget(self.kp2.cd,6,0)
 
@@ -268,6 +268,13 @@ class GUI(QtGui.QMainWindow):
     kp2layout.addWidget(self.kp2.cd,6,2)
 
     self.tab.addTab(self.kp2,"Commands")
+
+  def __otherPort(self):
+    op, ok = QtGui.QInputDialog.getText(self,"Other Port", "Port Address")
+    last = self.stg.portselect.count()    
+    self.stg.portselect.addItem(op)    
+    self.stg.portselect.setCurrentIndex(last)
+    
 
   def __initSerialPortSettings(self):
     self.stg = QtGui.QWidget()
@@ -294,40 +301,62 @@ class GUI(QtGui.QMainWindow):
        import glob
        ports=glob.glob("/dev/ttyS*") + glob.glob("/dev/ttyUSB*")
 
-    if self.bmf.dev != None:
+  
+    
+    if (self.bmf != None) and (self.bmf.dev != None):
       ports.append(self.bmf.dev)
        
     self.stg.pslabel = QtGui.QLabel("&Port:")
 
     self.stg.portselect = QtGui.QComboBox()
     self.stg.portselect.addItems(ports)    
-    self.stg.portselect.setCurrentIndex(ports.index(self.bmf.dev))
+
+    if (self.bmf != None) and (self.bmf.dev != None):
+       self.stg.portselect.setCurrentIndex(ports.index(self.bmf.dev))
     
     self.stg.pslabel.setBuddy(self.stg.portselect)
     stglayout.addWidget(self.stg.pslabel,0,0)
     stglayout.addWidget(self.stg.portselect,0,1)
+
+    self.stg.connect = self.__button('Other', self.stg, self.__otherPort)
+    stglayout.addWidget(self.stg.connect,0,2)
 
     # baud
     self.stg.bpslabel = QtGui.QLabel("&Baud:")
     self.stg.bps = QtGui.QComboBox()
     speeds=[ "300","900","1200","4800","9600","19200","38400","57600","119200", "0" ]
     self.stg.bps.addItems(speeds)    
-    self.stg.bps.setCurrentIndex( speeds.index(str(self.bmf.speed)))
+    if (self.bmf != None) and (self.bmf.dev != None):
+        self.stg.bps.setCurrentIndex( speeds.index(str(self.bmf.speed)))
+
     self.stg.bpslabel.setBuddy(self.stg.bps)
     stglayout.addWidget(self.stg.bpslabel,1,0)
     stglayout.addWidget(self.stg.bps,1,2)
 
+
     # Parity
-    self.stg.even = QtGui.QRadioButton('Even', self.stg)
-    stglayout.addWidget(self.stg.even,2,0)
-    self.stg.odd = QtGui.QRadioButton('Odd', self.stg)
-    stglayout.addWidget(self.stg.odd,2,1)
-    self.stg.none = QtGui.QRadioButton('None', self.stg)
-    stglayout.addWidget(self.stg.none,2,2)
+    #self.stg.even = QtGui.QRadioButton('Even', self.stg)
+    #stglayout.addWidget(self.stg.even,2,0)
+    #self.stg.odd = QtGui.QRadioButton('Odd', self.stg)
+    #stglayout.addWidget(self.stg.odd,2,1)
+    #self.stg.none = QtGui.QRadioButton('None', self.stg)
+    #stglayout.addWidget(self.stg.none,2,2)
 
     self.stg.connect = self.__button('Connect', self.stg, self.__connect)
     stglayout.addWidget(self.stg.connect,3,0)
-    self.connect(self.stg.connect, QtCore.SIGNAL('clicked()'), self.__connect)
+
+    self.stg.showlabel = QtGui.QLabel("Show")
+    stglayout.addWidget(self.stg.showlabel,4,1)
+
+    self.stg.log = self.__button('Log', self.stg, self.log.Show)
+    stglayout.addWidget(self.stg.log,5,0)
+
+    self.stg.dsp = self.__button('Display', self.stg, self.charDisplay.Show)
+    stglayout.addWidget(self.stg.dsp,5,1)
+
+    self.stg.cnt = self.__button('Counters', self.stg, self.counters.Show)
+    stglayout.addWidget(self.stg.cnt,5,2)
+
 
     self.tab.addTab(self.stg,"Settings")
 

@@ -37,7 +37,8 @@ def usage():
 import sys
 import getopt
 
-port="COM2:"
+#port="COM2:"
+port=None
 speed=38400
 dbg=2
 
@@ -60,6 +61,8 @@ for o, a in opts:
 print "port: %s, speed: %d\n", port, speed
 if port != None:
   b = bmf.bmf(port,speed,dbg)
+else:
+  b = None
 
 print 'len args is:', len(args)
 

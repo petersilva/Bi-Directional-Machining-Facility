@@ -1,0 +1,107 @@
+
+
+Th BMF protocol
+===============
+
+This document defines a protocol for communications over a serial line between 
+a host running the bmf application and an embedded system to control a 
+bi-dimensional machining facility.  
+
+The host is a system running the application based on python and bindings for the QT development library. The application is developed on Linux and deployed on Windows. For the purpose of this document, the host is referred to as *the PC*.
+
+The embedded system in the prototype is a Z80 family processor, with the peer implementation in assembly language for that processor.  The embedded system is therefore referred to as *the Z80*.
+
+The PC runs an application which displays a user interface, and sends commands to the Z80.  The Z80 sends updates to the PC.  The user interface features:
+   -- Keys arranged on one or more keyboards.
+   -- A dialog of counters
+   -- A character-based display (using a fixed font, and fixed dimensions) for the z80 to display arbitrary information.
+
+The protocol is peer to peer, with each side able to send commands 
+asynchronously, but different commands for each side defined.  
+
+Protocol has not yet been analyzed.  In general, 
+the PC being more powerful, handles user interaction, and often checks for 
+arrival of new data from the Z80 (without polling), and will post commands from the user as needed.  The Z80, having real-time constraints and limited resources, will check for data when convenient, and post commends when ready.
+
+Notation
+--------
+
+Raw hexadeximal values are assumed for all numbers (no prefix used.)
+In some cases, ASCII names will be used for characters.
+
+NUL - ASCII NUL character (00)
+LF  - ASCII LF (Line Feed) character (0x0a)
+
+
+PC to Z80
+---------
+
+For most keys presented on the keyboard, there is an command which is sent by the PC to the Z80.  format of a command frame::
+
+  Send:
+  <Key> \0a 
+        Send the key to the Z80.  Key is a single byte.
+
+  Response:
+  <status> \0a	
+        00 - success.
+        other indicates error.
+
+Keys defined:
+  00 - 09 - 00 to 0-9 (Digits)
+     The numbers, for digit entry.
+  .......  NW - NE 
+     Directional keys for x,y movement control.  
+  .......  Up - Down
+     Directional key for z movement control.
+
+  FF - Block Mode
+     Trigger send of data in 8-bit Intel Hex format, blocked by 24 byte frames.
+     if frame less than 24 bytes, it is padded with NULs.
+     ':' <datacount> <AddrH> <AddrL> <type> <data> <chksum> <padding... >
+           
+     last frame, triggers a return to command mode:
+     ':' 00 01 ff 00 00 00 ... 
+     
+
+Z80 to PC
+---------
+
+
+  Send:
+     string terminated by LF.
+  response:
+     ?? - should there be acknowledgements?
+
+
+  FE - Display characters
+      <x>, <y>, <string> LF
+      x - single byte column dimension bitwise ored with 0x80
+      y - single byte row dimension bitwise ored with 0x80
+      <string>  -- arbitrary sequence of printable ASCII characters
+      sequence ends with line feed.
+
+      error conditions:
+	- dimensions off screen.
+        - non-printable characters in string.
+
+  FD - Set (16-bit) Counter
+     <Id>,<Hi>,<Lo>,LF
+     Id - one byte index of the counter whose value is to be set.
+     Hi - most significant byte of counter whose value is to be set.
+     Lo - least significant byte of counter whose value is to be set.
+
+
+
+Protocol Analysis
+-----------------
+
+Known problems:
+   hardware in use has issues with character 255.  It seems to create corruption when that character is transferred as part of a stream.  Works ok in a command frame.
+
+Ambiguity:
+Use of or any fixed code with conflicts with an existing code will cause ambiguity when the code is returned legitimately. example: If z80 sends a command, and PC responds with 00 0a... is that an acknowledgement, or a keypress?
+
+re-synchronization... if we get lost, how do we get back in sync?
+
+

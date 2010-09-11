@@ -51,4 +51,12 @@ class CounterDisplay(QtGui.QDialog):
      self.ryc.display(0)
      self.rzc.display(0)
      
+  def Show(self):
+     if self.showing_window:
+        self.hide()
+        self.showing_window=0
+     else:
+        self.show()
+        self.showing_window=1
+
 

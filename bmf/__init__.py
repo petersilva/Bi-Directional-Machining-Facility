@@ -52,25 +52,35 @@ class bmf:
 
   """
 
-  def __init__(self,dev,speed=38400,dbg=0):
+  def __init__(self,dev,speed=38400,flags=0,iotimeout=10):
      """
        device = port to open. ("COM2:" or "/dev/ttyUSB0", etc...)
        speed  = baudrate for communications.
  
-       test harness:
-                if speed=0, then device is the name of a file to dump
-                ourput to
+       flags = 
+                01 - simulation mode. (does writing to a file)
+                02 - do not wait for acknowledgements (implied by 01)
+		04 - network server 'port=<port>'  <port> -> tcpip port # 8888
+		08 - network client 'port=<host>:<port>' -> localhost:8888
+	                
+       iotimeout -- amount of time to wait for responses. 
      """
      self.speed = speed
      self.dev = dev
 
-     if dbg & 1:
+     if flags & 1:
         print "opening in simulation mode, writing binary to ", dev
         self.serial = open(dev,'w')
-        self.dbg = dbg | 2   # append supression of ack's.
+        self.dbg = flags | 2   # append supression of ack's.
+     elif flags & 4:
+	print "network server: Not Implemented yet!"
+        return
+     elif flags & 8:
+	print "network client: Not Implemented yet!"
+        return
      else:
-        self.dbg = dbg
-        self.serial = serial.Serial(dev,baudrate=speed,timeout=10)
+        self.dbg = flags
+        self.serial = serial.Serial(dev,baudrate=speed,timeout=iotimeout)
      
   def writechk(self,buf,message):
      self.serial.write(buf)
