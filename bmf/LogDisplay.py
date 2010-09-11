@@ -49,6 +49,13 @@ class LogWindow(QtGui.QDialog):
      loglayout.addWidget(self.messageTable)
      self.setLayout(loglayout)
      
+  def minimumSizeHint(self):
+     return(QtCore.QSize(200,200))
+
+  def sizeHint(self):
+     return(QtCore.QSize(200,200))
+
+
 
   def Show(self):
      if self.showing_window:
