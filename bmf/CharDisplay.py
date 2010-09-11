@@ -52,7 +52,7 @@ class CharDisplay(QtGui.QWidget):
      while j < self.rows:
          y+=ymag
          pt = QtCore.QPoint(0,y)
-         print "printing: %d, %s" % (  j, self.msg[j] ) 
+         #print "printing: %d, %s" % (  j, self.msg[j] ) 
          painter.drawText(pt,self.msg[j])
          j+=1
 
@@ -71,7 +71,7 @@ class CharDisplay(QtGui.QWidget):
         self.add( "origin off of screen: row=%d, column=%d" % ( y, x ) )
 	return
 
-     print "write, self.msg[%d] before: +%s+" % ( y, self.msg[y] )
+     #print "write, self.msg[%d] before: +%s+" % ( y, self.msg[y] )
 
      xend = x + len(str)
      if xend < self.columns:
@@ -82,7 +82,7 @@ class CharDisplay(QtGui.QWidget):
          str_cutoff = len(str) - (xend - self.columns)
          self.msg[y]= self.msg[y][0:x] + str[0:str_cutoff] 
 
-     print "write, self.msg[%d]  after: +%s+" % ( y, self.msg[y] )
+     #print "write, self.msg[%d]  after: +%s+" % ( y, self.msg[y] )
 
 
      self.update() 
