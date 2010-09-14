@@ -43,7 +43,7 @@ For most keys presented on the keyboard, there is an command which is sent by th
         Send the key to the Z80.  Key is a single byte.
 
   Response:
-  <status> \0a	
+  <status> 
         00 - success.
         other indicates error.
 
@@ -55,7 +55,7 @@ Keys defined:
   .......  Up - Down
      Directional key for z movement control.
 
-  FF - Block Mode
+  80 - Block Mode
      Trigger send of data in 8-bit Intel Hex format, blocked by 24 byte frames.
      if frame less than 24 bytes, it is padded with NULs.
      ':' <datacount> <AddrH> <AddrL> <type> <data> <chksum> <padding... >
@@ -74,7 +74,7 @@ Z80 to PC
      ?? - should there be acknowledgements?
 
 
-  FE - Display characters
+  81 - Display characters
       <x>, <y>, <string> LF
       x - single byte column dimension bitwise ored with 0x80
       y - single byte row dimension bitwise ored with 0x80
@@ -85,12 +85,23 @@ Z80 to PC
 	- dimensions off screen.
         - non-printable characters in string.
 
-  FD - Set (16-bit) Counter
+  82 - Set (16-bit) Counter
      <Id>,<Hi>,<Lo>,LF
      Id - one byte index of the counter whose value is to be set.
      Hi - most significant byte of counter whose value is to be set.
      Lo - least significant byte of counter whose value is to be set.
 
+  83 - response to last command received
+     <status>, LF - completion status of last command received.
+     00 - OK
+     otherwise, bad.
+     01 - malformed line, resend please
+
+  84 - resync request.
+      not sure about this...
+      read bytes until a correct response is received.
+      response would be to send  FC FB LF for a while, until ...
+      you get       
 
 
 Protocol Analysis
@@ -104,4 +115,5 @@ Use of or any fixed code with conflicts with an existing code will cause ambigui
 
 re-synchronization... if we get lost, how do we get back in sync?
 
+not sure the resync stuff works, what if they both lose sync... what should they do?
 

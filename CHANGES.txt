@@ -1,5 +1,6 @@
 
 TODO:
+  -- move logging to work with callbacks, so other classes can log.
   -- make protocol symmetrical
   -- have it work with sockets, and have two bmf's talk to eachother.
   -- have protocol for drawing in the char window.
