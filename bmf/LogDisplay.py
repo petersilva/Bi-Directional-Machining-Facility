@@ -26,13 +26,14 @@ class LogWindow(QtGui.QDialog):
      self.messageTable.setItem(0,0, leTime)
      leMsg = QtGui.QTableWidgetItem(msg) 
      self.messageTable.setItem(0,1, leMsg)
+     self.last_message = msg
      #print self.log_entries
      print msg
+     self.post_callback(msg)
 
 
 
-
-  def __init__(self,post_callback,parent=None):
+  def __init__(self,post_callback=None,parent=None):
      super(LogWindow, self).__init__(parent)
      
      self.post_callback=post_callback

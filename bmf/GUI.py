@@ -27,7 +27,9 @@ class GUI(QtGui.QMainWindow):
 
   def __logit( self, text ):
     self.log.add(text)
-    self.statusBar().showMessage(text)
+
+  def __logUI(self,msg):
+    self.statusBar().showMessage(msg)
 
   def __button( self, text, parent, action, otheraction=None ):
     w = QtGui.QPushButton(text, parent)
@@ -151,8 +153,11 @@ class GUI(QtGui.QMainWindow):
 
     if self.bmf != None:
        del self.bmf
-    self.bmf = bmf.bmf(self.stg.portselect.currentText(), 
-                  int(self.stg.bps.currentText()),flags)
+    self.bmf = bmf.bmf(self.stg.portselect.currentText(),
+             speed=int(self.stg.bps.currentText()), 
+             flags=flags,
+	     msgcallback=self.__logit, 
+             displaycallback=self.charDisplay.write )
   
   def sendfile(self):
     filename = QtGui.QFileDialog.getOpenFileName(self, 
@@ -431,7 +436,7 @@ class GUI(QtGui.QMainWindow):
      self.exx=4
      self.exy=4
 
-     self.log=LogDisplay.LogWindow(self)
+     self.log=LogDisplay.LogWindow(self.__logUI)
      self.__logit("Startup...")
 
      self.bmf=bmf
