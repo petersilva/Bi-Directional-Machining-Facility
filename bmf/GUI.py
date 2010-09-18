@@ -132,13 +132,13 @@ class GUI(QtGui.QMainWindow):
   def __connect(self):
     #self.serial.connect( ... with baud etc.. set.
 
-    self.__logit( "connecting..." )
-    self.__logit( "speed: %s " % self.stg.bps.currentText() )
-    self.__logit( "device: %s " % self.stg.portselect.currentText() )
-    self.__logit( "file write: %d " % self.stg.sim.isChecked() )
-    self.__logit( "no ack: %d " % self.stg.noack.isChecked() )
-    self.__logit( "network server: %d " % self.stg.netsrv.isChecked() )
-    self.__logit( "network client: %d " % self.stg.netcli.isChecked() )
+    #self.__logit( "connecting..." )
+    #self.__logit( "speed: %s " % self.stg.bps.currentText() )
+    #self.__logit( "device: %s " % self.stg.portselect.currentText() )
+    #self.__logit( "file write: %d " % self.stg.sim.isChecked() )
+    #self.__logit( "no ack: %d " % self.stg.noack.isChecked() )
+    #self.__logit( "network server: %d " % self.stg.netsrv.isChecked() )
+    #self.__logit( "network client: %d " % self.stg.netcli.isChecked() )
 
     flags = 0 
     if self.stg.sim.isChecked() : 
@@ -149,21 +149,23 @@ class GUI(QtGui.QMainWindow):
         flags = flags | 4
     if self.stg.netcli.isChecked():
         flags = flags | 8
-    self.__logit( "flags: %02x " % flags )
 
     if self.bmf != None:
        del self.bmf
+
     self.bmf = bmf.bmf(self.stg.portselect.currentText(),
              speed=int(self.stg.bps.currentText()), 
              flags=flags,
 	     msgcallback=self.__logit, 
              displaycallback=self.charDisplay.write )
+    self.updateTimer.setInterval(500)
+    self.updateTimer.start()
   
   def sendfile(self):
     filename = QtGui.QFileDialog.getOpenFileName(self, 
                   "Find Files", QtCore.QDir.currentPath())
 
-    self.__logit( "filename: %s" % filename )
+    self.__logit( "sending file: %s" % filename )
 
     if filename == None:
         self.__logit( "aborted" )
@@ -288,6 +290,10 @@ class GUI(QtGui.QMainWindow):
 
     self.tab.addTab(self.kp2,"Commands")
 
+  def __routineRead(self):
+    self.bmf.readcmd()
+
+
   def __otherPort(self):
     op, ok = QtGui.QInputDialog.getText(self,"Other Port", "Port Address")
     if ok:
@@ -313,7 +319,6 @@ class GUI(QtGui.QMainWindow):
 
        ports=[]
        for order, port, desc, hwid in sorted(scanwin32.comports()):
-          self.__logit( "%-10s: %s (%s) ->" % (port, desc, hwid) )
           ports.append(port)
    
 
@@ -326,6 +331,8 @@ class GUI(QtGui.QMainWindow):
     if (self.bmf != None) and (self.bmf.dev != None):
       ports.append(self.bmf.dev)
        
+    ports.append("localhost:50007")
+
     self.stg.pslabel = QtGui.QLabel("&Port:")
 
     self.stg.portselect = QtGui.QComboBox()
@@ -484,5 +491,9 @@ class GUI(QtGui.QMainWindow):
    
      self.show()
      self.setCentralWidget(self.mainwin)
+
+     self.updateTimer = QtCore.QTimer(self)
+     self.connect(self.updateTimer, QtCore.SIGNAL("timeout()"), self.__routineRead )
+
 
      self.__logit("Ready.")

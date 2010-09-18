@@ -12,6 +12,9 @@ import serial
 import binascii
 import platform
 import time
+import socket
+import select
+import sys
 
 FLAG_WRITE_FILE = 1 # simulation mode. (does writing to a file)
 FLAG_NO_ACK     = 2 # do not wait for acknowledgements (implied by 01)
@@ -47,7 +50,11 @@ FRAME_ACK_OK      = '\x00'
 class bmf:
   """
     bidirectional machining facility - python interface to the z80 over 
-       a serial port
+       a serial port.  
+
+    The protocol is symmmetrical, so the serial port can be substituted by another instance
+    of the software for testing purposes.  This also means that one could connect to a terminal server
+    for control at greater distances than permitted by RS-232. 
 
     target function:
 	send keys from virtual keypad?
@@ -72,21 +79,28 @@ class bmf:
      """
      self.speed = speed
      self.dev = dev
+     self.flags = flags
      self.msgcallback=msgcallback
      self.displaycallback=displaycallback
-     if flags & bmf.FLAG_WRITE_FILE:
+
+     if self.flags & FLAG_WRITE_FILE:
         print "opening in simulation mode, writing binary to ", dev
         self.serial = open(dev,'w')
-        self.dbg = flags | bmf.FLAG_NO_ACK   # append supression of ack's.
-     elif flags & bmf.FLAG_NET_SERVER:
-	print "network server: Not Implemented yet!"
-        return
-     elif flags & bmf.FLAG_NET_CLIENT:
-	print "network client: Not Implemented yet!"
-        return
+        self.flags = flags | FLAG_NO_ACK   # append supression of ack's.
+     elif self.flags & (FLAG_NET_SERVER|FLAG_NET_CLIENT):
+       if self.flags & FLAG_NET_SERVER:
+  	   print "network server: Not Implemented yet!"
+           self.sockserv()
+       elif flags & FLAG_NET_CLIENT:
+	   print "network client: Not Implemented yet!"
+           self.sockcli()
+
+       self.poll = select.poll()
+       self.poll.register(self.serial.fileno(),select.POLLIN)
+
+       return
      else:
-	print "serial port: connecting to %s" % self.port
-        self.dbg = flags
+	print "serial port: connecting to %s" % self.dev
         self.serial = serial.Serial(dev,baudrate=speed)
 
      self.msgcallback( "HoHo!" )
@@ -103,7 +117,10 @@ class bmf:
 	this routine hangs the application, until someone connects.
 
      """
-     for res in socket.getaddrinfo(None, int(self.port), socket.AF_UNSPEC,
+     print 'port is:', self.dev
+     host, port = self.dev.split(':')
+     host = None
+     for res in socket.getaddrinfo(host, int(port), socket.AF_UNSPEC,
                               socket.SOCK_STREAM, 0, socket.AI_PASSIVE):
 	af, socktype, proto, canonname, sa = res
         try:
@@ -118,19 +135,72 @@ class bmf:
             s.close()
             s = None
             continue
+
      if s is None:
        print 'could not open socket'
        return
+
      self.serial, addr = s.accept()
      print "connected by, ", addr
  
+
+  def sockcli(self):
+     """
+         initialize a socket client.
+
+     """
+     host, port = self.dev.split(':')
+     
+     self.msgcallback( "connecting to host: %s, port: %s" % ( host, port ))
+     s = None
+     for res in socket.getaddrinfo( str(host), int(port), socket.AF_UNSPEC, socket.SOCK_STREAM ):
+        af, socktype, proto, canonname, sa = res
+
+        print res
+        try:
+            s = socket.socket(af, socktype, proto)
+        except socket.error, msg:
+            s = None
+            continue
+
+        try:
+            s.connect(sa)
+        except socket.error, msg:
+            s = None
+            continue
+        break
+     if s is None:
+        print 'could not open socket'
+        sys.exit(1)
+
+     self.serial=s
+
+
   def resync(self):
      """ 
          received a garbled command, do work to get back to known state.
      """
      return
      
-  def readcmd(self,waitforcommand=False):
+  def __readn(self,nbytes=1):
+     if self.flags & (FLAG_NET_CLIENT|FLAG_NET_SERVER):
+	return self.serial.recv(nbytes)
+     else:
+	return self.serial.read(nbytes)
+
+  def __readline(self):
+     """ calls readn to read an entire line, returns the string, with the\n
+     """
+     s=""
+     c=' ' 
+     while c != '\n':
+          c=self.__readn()
+          s+=c
+
+     return s
+          
+
+  def readcmd(self,block=False):
      """
      purpose:
        read a command from port.  
@@ -155,57 +225,66 @@ class bmf:
                does not retry reads for incomplete... 
      """
 
-     if self.flags & bmf.FLAG_WRITE_FILE : 
+     if self.flags & FLAG_WRITE_FILE : 
 	return 0 # by definition, file will never answer.
  
      if not block:
-       if self.serial.inWaiting() == 0:   # pyserial specific call...
+       if self.flags & (FLAG_NET_CLIENT|FLAG_NET_SERVER):
+           if self.poll.poll(0) == [] :# check, without waiting, for pending read.   
+              return 0 # no pending data, we are done.
+       elif self.serial.inWaiting() == 0:   # pyserial specific call...
         return 0 # no data received, we are done!
 
-     r=self.serial.read(1)
-     cmd=int(r)
+     r=self.__readn()
+     if r == '':
+        return 0 # FIXME: on socket, polling not working?
+     cmd=ord(r)
    
      if cmd == 0x80: #enter blockmode, prepare to rx data.
         print "Not Implemented: receive Intel Hex format data. "
         return 1
      elif cmd == 0x81: # display character string
-        coords = self.serial.read(2)
+        coords = self.__readn(2)
         if (len(coords) < 2):
 	      self.resync()
 	      return
-        s = self.serial.readline()       
-        x = 0x3f & int(coords[0])
-        y = 0x3f & int(coords[1])
+        s = self.__readline()       
+        x = 0x3f & ord(coords[0])
+        y = 0x3f & ord(coords[1])
         self.displaycallback(x,y,s)
+        self.msgcallback( "display: %s" % s)
         print string
         return 0 
      elif cmd == 0x82: # update 16-bit Counter
-        buf=self.serial.read(4)
-        counter_index = int(buf[0])
-        counter_value  = int(buf[1])*256+int(buf[2])
+        buf=self.__readn(4)
+        counter_index = ord(buf[0])
+        counter_value  = ord(buf[1])*256+ord(buf[2])
         if buf[3] != TRIGGER_INTERRUPT:
            print 'malformed counter update... sync lost!'
            self.resync()
         self.counters[counter_index] = counter_value       
         return 0
      elif cmd == 0x83: # response status from last command received.
-        buf=self.serial.read(2)
-        if int(buf[1]) != 0x0a:
+        buf=self.__readn(2)
+        if ord(buf[1]) != 0x0a:
             print "response corrupted!"
+            self.msgcallback( "response corrupted" )
             return 2
-        if int(buf[0]) == 0x00:
+        if ord(buf[0]) == 0x00:
             return 0  # command succeeded.
-        if int(buf[0]) == 0x01: # blockmode resend current binrec
+        if ord(buf[0]) == 0x01: # blockmode resend current binrec
             self.serial.write(self.binrec)
             self.serial.flush()
             self.last_command_message="resent."
+            self.msgcallback( "resending block" )
             return self.readcmd(True)
         else: # undefined error 
-            print "error %d: %s" % (int(buf[0]), self.last_command_message )
-            return int(buf[0])
+            print "error %d: %s" % (ord(buf[0]), self.last_command_message )
+            return ord(buf[0])
+            self.msgcallback( "error: %d", ord(buf[0]) )
      else: # command...
-        print "Not Implemented: receive key"
-        self.serial.readline()
+        s = self.__readline()
+        self.msgcallback( "Received Key" )
         return 1
       
 
@@ -216,8 +295,12 @@ class bmf:
 
        return 0 on success, otherwise, an error message.
      """
-     self.serial.write(buf)
-     self.serial.flush()
+     if self.flags & (FLAG_NET_CLIENT|FLAG_NET_SERVER):
+         self.serial.send(buf)
+     else:
+         self.serial.write(buf)
+         self.serial.flush()
+
      self.last_command_message=message
 
      return self.readcmd(block)

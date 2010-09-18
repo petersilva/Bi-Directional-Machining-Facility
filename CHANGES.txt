@@ -1,14 +1,13 @@
-
 TODO:
-  -- move logging to work with callbacks, so other classes can log.
   -- make protocol symmetrical
-  -- have it work with sockets, and have two bmf's talk to eachother.
-  -- have protocol for drawing in the char window.
+       -- rx intel hex stream...
+       -- tx graphic display
+       -- rx register setting
+       -- tx register setting.
+       -- 
   -- have programmable length of log window, for now it just fills up memory
   -- have font selection fill window in char display
-  -- have Settings dialog work.
-	-- parity is not covered.
-	-- testing ack toggle.
+  -- testing ack toggle.
   -- have toggle buttons visually confirm state.
 
 PC -> Z80
@@ -21,19 +20,21 @@ telecom:
     compteurs... 16 bit... en milliemes.
 
 unknown/WILL NOT DO:
-  -- get on github. need public ssh key for that.
   -- decimal in counters.
      will not match, because have to convert to decimals, and will not match
      integer counters. 
-     
-
-
 
 
 
 DONE:
+  -- use poll & serial peek commands to remove non-blocking reads.
   -- starts up with no connection (need not have a bmf object working.)
-  -- 
+  -- move logging to work with callbacks, so other classes can log.
+  -- have protocol for drawing in the char window.
+  -- have it work with sockets, and have two bmf's talk to eachother.
+  -- get on github. need public ssh key for that.
+  -- have Settings dialog work.
+
 
 2010/09/10:
 ----------
