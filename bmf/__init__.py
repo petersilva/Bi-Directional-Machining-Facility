@@ -65,7 +65,7 @@ class bmf:
     use intel hex format to exchange binary data: https://launchpad.net/intelhex/
   """
 
-  def __init__(self,dev,speed=38400,flags=0,msgcallback=None,displaycallback=None):
+  def __init__(self,dev,speed=38400,flags=0,msgcallback=None,display=None):
      """
        device = port to open. ("COM2:" or "/dev/ttyUSB0", etc...)
        speed  = baudrate for communications.
@@ -81,18 +81,16 @@ class bmf:
      self.dev = dev
      self.flags = flags
      self.msgcallback=msgcallback
-     self.displaycallback=displaycallback
+     self.display=display
 
      if self.flags & FLAG_WRITE_FILE:
-        print "opening in simulation mode, writing binary to ", dev
+        self.msgcallback( "simulation by writing to: %s" % dev )
         self.serial = open(dev,'w')
         self.flags = flags | FLAG_NO_ACK   # append supression of ack's.
      elif self.flags & (FLAG_NET_SERVER|FLAG_NET_CLIENT):
        if self.flags & FLAG_NET_SERVER:
-  	   print "network server: Not Implemented yet!"
            self.sockserv()
        elif flags & FLAG_NET_CLIENT:
-	   print "network client: Not Implemented yet!"
            self.sockcli()
 
        self.poll = select.poll()
@@ -100,15 +98,15 @@ class bmf:
 
        return
      else:
-	print "serial port: connecting to %s" % self.dev
+	self.msgcallback( "serial port: connecting to %s" % self.dev )
         self.serial = serial.Serial(dev,baudrate=speed)
 
-     self.msgcallback( "HoHo!" )
      self.counters = []
      i=0
      while i < 255:
         self.counters.append(0) 
         i+=1
+
 
 
   def sockserv(self):
@@ -141,7 +139,7 @@ class bmf:
        return
 
      self.serial, addr = s.accept()
-     print "connected by, ", addr
+     self.msgcallback( "connection accepted. " )
  
 
   def sockcli(self):
@@ -176,6 +174,8 @@ class bmf:
      self.serial=s
 
 
+
+ 
   def resync(self):
      """ 
          received a garbled command, do work to get back to known state.
@@ -251,8 +251,9 @@ class bmf:
         s = self.__readline()       
         x = 0x3f & ord(coords[0])
         y = 0x3f & ord(coords[1])
-        self.displaycallback(x,y,s)
+        self.display.writeStringXY(x,y,s)
         self.msgcallback( "display: %s" % s)
+        self.updateReceived=True
         print string
         return 0 
      elif cmd == 0x82: # update 16-bit Counter
@@ -260,14 +261,14 @@ class bmf:
         counter_index = ord(buf[0])
         counter_value  = ord(buf[1])*256+ord(buf[2])
         if buf[3] != TRIGGER_INTERRUPT:
-           print 'malformed counter update... sync lost!'
+           self.msgcallback( "malformed counter update, lost sync..." )
            self.resync()
         self.counters[counter_index] = counter_value       
+        self.updateReceived=True
         return 0
      elif cmd == 0x83: # response status from last command received.
         buf=self.__readn(2)
         if ord(buf[1]) != 0x0a:
-            print "response corrupted!"
             self.msgcallback( "response corrupted" )
             return 2
         if ord(buf[0]) == 0x00:
@@ -284,7 +285,7 @@ class bmf:
             self.msgcallback( "error: %d", ord(buf[0]) )
      else: # command...
         s = self.__readline()
-        self.msgcallback( "Received Key" )
+        self.msgcallback( "Received Key: %02x" % cmd)
         return 1
       
 
@@ -307,7 +308,7 @@ class bmf:
 
   def sendKey(self,str):
      key=keycodes[str]
-     print "Sending Key for +%s+, key: %c" % ( str, key )
+     self.msgcallback( "%02x sent for key: +%s+" % ( key, str ) )
      self.writecmd(
           "%c%c" % ( key, TRIGGER_INTERRUPT ),
            "error on send of key: %s" % str
@@ -371,6 +372,7 @@ class bmf:
     data=f.read()
     f.close()
     self.sendbulkbinbuffer(data,baseaddress)
+
 
 
   def __hexrecord2bin(self,record):

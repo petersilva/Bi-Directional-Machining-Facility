@@ -1,14 +1,14 @@
 TODO:
+  -- add LEDS?
+  -- have routine updates make radiobuttons symmetrical.
   -- make protocol symmetrical
-       -- rx intel hex stream...
-       -- tx graphic display
-       -- rx register setting
        -- tx register setting.
-       -- 
+       -- tx graphic display
+       -- rx intel hex stream...
   -- have programmable length of log window, for now it just fills up memory
   -- have font selection fill window in char display
   -- testing ack toggle.
-  -- have toggle buttons visually confirm state.
+     -- need to release server to activate client, ok?
 
 PC -> Z80
 xx \0a  ->
@@ -27,12 +27,17 @@ unknown/WILL NOT DO:
 
 
 DONE:
+  -- have toggle buttons visually confirm state.
+  -- make protocol symmetrical
+       -- rx register setting
+       -- rx draw command.
   -- use poll & serial peek commands to remove non-blocking reads.
   -- starts up with no connection (need not have a bmf object working.)
   -- move logging to work with callbacks, so other classes can log.
   -- have protocol for drawing in the char window.
   -- have it work with sockets, and have two bmf's talk to eachother.
   -- get on github. need public ssh key for that.
+  -- send multiple arbitrary bytes.
   -- have Settings dialog work.
 
 

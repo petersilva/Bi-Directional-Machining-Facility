@@ -17,6 +17,7 @@ import bmf
 from . import CounterDisplay
 from . import LogDisplay
 from . import CharDisplay
+from . import CharDisplayWindow
 
 
 
@@ -54,11 +55,6 @@ class GUI(QtGui.QMainWindow):
         self.__logit("%s contains an invalid hex number" % kk)
         return 
 
-    #only want ASCII characters.
-    #for x in hxa: 
-    #   if int(x) > 255:
-    #	  return
-
     self.bmf.writechk(''.join(hxa),"returned error from send of %s" % kk)
     self.__logit( "%s code sent" % kk )
 
@@ -91,13 +87,25 @@ class GUI(QtGui.QMainWindow):
 
  
     print "going to: %d,%d,%d" % (x, y, z)
-    self.counters.axc.display(x)
-    self.counters.ayc.display(y)
-    self.counters.azc.display(z)
 
-    self.counters.rxc.display(self.counters.rxc.value()+xoff)
-    self.counters.ryc.display(self.counters.ryc.value()+yoff)
-    self.counters.rzc.display(self.counters.rzc.value()+zoff)
+    self.bmf.counters[0] = x
+    self.bmf.counters[1] = y
+    self.bmf.counters[2] = z
+
+    self.bmf.counters[3] = self.counters.rxc.value()+xoff
+    self.bmf.counters[4] = self.counters.ryc.value()+yoff
+    self.bmf.counters[5] = self.counters.rzc.value()+zoff
+
+    self.updateGUICounters()
+
+
+  def updateGUICounters(self):
+    self.counters.axc.display(self.bmf.counters[0])
+    self.counters.ayc.display(self.bmf.counters[1])
+    self.counters.azc.display(self.bmf.counters[2])
+    self.counters.rxc.display(self.bmf.counters[3])
+    self.counters.ryc.display(self.bmf.counters[4])
+    self.counters.rzc.display(self.bmf.counters[5])
 
   def __goNW(self):
     self.__go(-1,-1,0)
@@ -156,10 +164,9 @@ class GUI(QtGui.QMainWindow):
     self.bmf = bmf.bmf(self.stg.portselect.currentText(),
              speed=int(self.stg.bps.currentText()), 
              flags=flags,
-	     msgcallback=self.__logit, 
-             displaycallback=self.charDisplay.write )
-    self.updateTimer.setInterval(500)
-    self.updateTimer.start()
+	     msgcallback=self.__logit,
+             display=self.charDisplay )
+    self.connected = True
   
   def sendfile(self):
     filename = QtGui.QFileDialog.getOpenFileName(self, 
@@ -290,9 +297,28 @@ class GUI(QtGui.QMainWindow):
 
     self.tab.addTab(self.kp2,"Commands")
 
-  def __routineRead(self):
-    self.bmf.readcmd()
+  def __routineUpdate(self):
 
+    if self.connected:
+        self.bmf.readcmd()
+
+        if self.bmf.updateReceived:
+           self.updateGUICounters()
+           self.charDisplayWindow.update()
+           self.bmf.updateReceived = False
+        
+    # ensure radio button consistency.
+    if self.stg.sim.isChecked() : 
+       if not self.stg.noack.isChecked(): 
+           self.stg.noack.setChecked(True)
+    if self.stg.netsrv.isChecked():
+       if self.stg.sim.isChecked() : 
+           self.stg.sim.setChecked(False)
+       if self.stg.netcli.isChecked():
+           self.stg.netcli.setChecked(False)
+    if self.stg.netcli.isChecked():
+       if self.stg.sim.isChecked() : 
+           self.stg.sim.setChecked(False)
 
   def __otherPort(self):
     op, ok = QtGui.QInputDialog.getText(self,"Other Port", "Port Address")
@@ -389,7 +415,7 @@ class GUI(QtGui.QMainWindow):
     self.stg.log = self.__button('Log', self.stg, self.log.Show)
     stglayout.addWidget(self.stg.log,7,0,1,1)
 
-    self.stg.dsp = self.__button('Display', self.stg, self.charDisplay.Show)
+    self.stg.dsp = self.__button('Display', self.stg, self.charDisplayWindow.Show)
     stglayout.addWidget(self.stg.dsp,7,1,1,2)
 
     self.stg.cnt = self.__button('Counters', self.stg, self.counters.Show)
@@ -430,11 +456,20 @@ class GUI(QtGui.QMainWindow):
      self.close()
      
   def exercise( self ):
-     self.charDisplay.write(0,0, "0123456789012345678901234567890123456789012345678")
-     self.charDisplay.write(self.exx,self.exy,"Hello")
+     self.charDisplay.writeStringXY(0,0, "0123456789012345678901234567890123456789012345678")
+     self.charDisplay.writeStringXY(self.exx,self.exy,"Hello")
+
      self.exy+=1
      self.exx+=4
-   
+
+     if self.connected:
+         self.bmf.counters[0]=1000*self.exx
+         self.bmf.counters[1]=1000*self.exy
+         self.bmf.updateReceived=True
+     else:
+         self.charDisplayWindow.update()
+
+      
 
   def __init__(self, bmf=None, parent=None):
 
@@ -447,7 +482,12 @@ class GUI(QtGui.QMainWindow):
      self.__logit("Startup...")
 
      self.bmf=bmf
-     self.charDisplay=CharDisplay.CharDisplay(self.log,20,48)
+
+     self.connected = (self.bmf != None) 
+
+     self.charDisplay=CharDisplay.CharDisplay(self.log) 
+     self.charDisplayWindow=CharDisplayWindow.CharDisplayWindow(self.log,self.charDisplay)
+
      self.counters=CounterDisplay.CounterDisplay(self)
 
      self.setMinimumSize(900, 500)
@@ -484,8 +524,8 @@ class GUI(QtGui.QMainWindow):
      #self.mainlayout.addWidget(self.tab,1,0)
      self.mainlayout.addWidget(self.tab,4)
 
-     #self.mainlayout.addWidget(self.charDisplay,1,1)
-     self.mainlayout.addWidget(self.charDisplay,8)
+     #self.mainlayout.addWidget(self.charDisplayWindow,1,1)
+     self.mainlayout.addWidget(self.charDisplayWindow,8)
 
      self.mainwin.setLayout(self.mainlayout)
    
@@ -493,7 +533,9 @@ class GUI(QtGui.QMainWindow):
      self.setCentralWidget(self.mainwin)
 
      self.updateTimer = QtCore.QTimer(self)
-     self.connect(self.updateTimer, QtCore.SIGNAL("timeout()"), self.__routineRead )
+     self.connect(self.updateTimer, QtCore.SIGNAL("timeout()"), self.__routineUpdate )
+     self.updateTimer.setInterval(500)
+     self.updateTimer.start()
 
 
      self.__logit("Ready.")
