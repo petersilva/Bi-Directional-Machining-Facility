@@ -98,7 +98,7 @@ class bmf:
 
        return
      else:
-	self.msgcallback( "serial port: connecting to %s" % self.dev )
+	self.msgcallback( "serial port: connecting to %s at %d" % (self.dev,speed) )
         self.serial = serial.Serial(dev,baudrate=speed)
 
      self.counters = []

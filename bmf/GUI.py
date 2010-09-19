@@ -55,7 +55,7 @@ class GUI(QtGui.QMainWindow):
         self.__logit("%s contains an invalid hex number" % kk)
         return 
 
-    self.bmf.writechk(''.join(hxa),"returned error from send of %s" % kk)
+    self.bmf.writecmd(''.join(hxa), "returned error from send of %s" % kk)
     self.__logit( "%s code sent" % kk )
 
   def __sendToggleKey(self): 
@@ -158,11 +158,11 @@ class GUI(QtGui.QMainWindow):
     if self.stg.netcli.isChecked():
         flags = flags | 8
 
-    if self.bmf != None:
-       del self.bmf
+    #if self.bmf != None:
+    #   del self.bmf
 
-    self.bmf = bmf.bmf(self.stg.portselect.currentText(),
-             speed=int(self.stg.bps.currentText()), 
+    self.bmf = bmf.bmf(str(self.stg.portselect.currentText()),
+             speed=int(str(self.stg.bps.currentText())), 
              flags=flags,
 	     msgcallback=self.__logit,
              display=self.charDisplay )
