@@ -1,4 +1,8 @@
 TODO:
+  -- clear screen command in Testing.
+  -- remove autorepeat from Connect.
+  -- disconnect.
+  -- subtract Acks?  Do we need them?
   -- add LEDS?
   -- have routine updates make radiobuttons symmetrical.
   -- make protocol symmetrical

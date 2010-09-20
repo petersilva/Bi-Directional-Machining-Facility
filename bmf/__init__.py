@@ -67,6 +67,7 @@ class bmf:
 
   def __init__(self,dev,speed=38400,flags=0,msgcallback=None,display=None):
      """
+
        device = port to open. ("COM2:" or "/dev/ttyUSB0", etc...)
        speed  = baudrate for communications.
  
@@ -75,7 +76,7 @@ class bmf:
                 02 - do not wait for acknowledgements (implied by 01)
 		04 - network server 'port=<port>'  <port> -> tcpip port # 8888
 		08 - network client 'port=<host>:<port>' -> localhost:8888
-	                
+
      """
      self.speed = speed
      self.dev = dev
@@ -249,12 +250,16 @@ class bmf:
 	      self.resync()
 	      return
         s = self.__readline()       
-        x = 0x3f & ord(coords[0])
-        y = 0x3f & ord(coords[1])
-        self.display.writeStringXY(x,y,s)
-        self.msgcallback( "display: %s" % s)
+        if (x == 0xff) and (y == 0xff):
+           self.display.clear()
+           self.msgcallback( "clear screen" )
+        else:
+           x = 0x3f & ord(coords[0])
+           y = 0x3f & ord(coords[1])
+           self.display.writeStringXY(x,y,s[0:-1])
+           self.msgcallback( "display: %s" % s)
+
         self.updateReceived=True
-        print string
         return 0 
      elif cmd == 0x82: # update 16-bit Counter
         buf=self.__readn(4)

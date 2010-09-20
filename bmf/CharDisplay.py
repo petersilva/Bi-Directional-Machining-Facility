@@ -12,6 +12,12 @@ class CharDisplay:
          self.msg.append( " " * self.columns )
          j+=1
 
+  def clear(self):
+     j=0
+     while j < self.rows:
+         self.msg[j]= " " * self.columns 
+         j+=1
+
   def writeStringXY(self,x,y,str):
      """
         display a given str at row y in column x.

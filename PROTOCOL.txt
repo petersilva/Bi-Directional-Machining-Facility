@@ -81,6 +81,8 @@ Z80 to PC
       <string>  -- arbitrary sequence of printable ASCII characters
       sequence ends with line feed.
 
+      if x=ff and y=ff, then it means clear screen.
+
       error conditions:
 	- dimensions off screen.
         - non-printable characters in string.

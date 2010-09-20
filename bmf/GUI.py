@@ -407,7 +407,7 @@ class GUI(QtGui.QMainWindow):
 
     self.stg.connect = self.__button('Connect', self.stg, self.__connect)
     stglayout.addWidget(self.stg.connect,5,0,1,4)
-
+    self.stg.connect.setAutoRepeat(False)
 
     self.stg.showlabel = QtGui.QLabel("Show:")
     stglayout.addWidget(self.stg.showlabel,6,0)
@@ -443,17 +443,26 @@ class GUI(QtGui.QMainWindow):
     self.tst.dt = self.__button('DisplayTest', self.tst, self.exercise)
     tstlayout.addWidget(self.tst.dt,2,0)
 
+    self.tst.dc = self.__button('Clear', self.tst, self.__clear)
+    tstlayout.addWidget(self.tst.dc,2,1)
+
     self.tab.addTab(self.tst,"Testing")
 
 
 
 
   def __exit( self ):
-     del self.bmf
-     #self.Display.hide()
      self.log.close()
      self.counters.close()
      self.close()
+     self.bmf.serial.close()
+     
+  def __clear(self):
+     self.charDisplay.clear()
+     if self.connected:
+        self.bmf.updateReceived=True
+     else:
+         self.charDisplayWindow.update()
      
   def exercise( self ):
      self.charDisplay.writeStringXY(0,0, "0123456789012345678901234567890123456789012345678")
@@ -485,8 +494,8 @@ class GUI(QtGui.QMainWindow):
 
      self.connected = (self.bmf != None) 
 
-     self.charDisplay=CharDisplay.CharDisplay(self.log) 
-     self.charDisplayWindow=CharDisplayWindow.CharDisplayWindow(self.log,self.charDisplay)
+     self.charDisplay=CharDisplay.CharDisplay(self.__logit) 
+     self.charDisplayWindow=CharDisplayWindow.CharDisplayWindow(self.__logit,self.charDisplay)
 
      self.counters=CounterDisplay.CounterDisplay(self)
 
