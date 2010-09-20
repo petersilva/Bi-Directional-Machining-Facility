@@ -250,12 +250,14 @@ class bmf:
 	      self.resync()
 	      return
         s = self.__readline()       
-        if (x == 0xff) and (y == 0xff):
+        x = 0x7f & ord(coords[0])
+        y = 0x7f & ord(coords[1])
+        if (x == 0x7f) and (y == 0x7f):
            self.display.clear()
            self.msgcallback( "clear screen" )
         else:
-           x = 0x3f & ord(coords[0])
-           y = 0x3f & ord(coords[1])
+           x = 0x7f & ord(coords[0])
+           y = 0x7f & ord(coords[1])
            self.display.writeStringXY(x,y,s[0:-1])
            self.msgcallback( "display: %s" % s)
 
