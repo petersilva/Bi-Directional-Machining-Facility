@@ -38,11 +38,19 @@ class CharDisplayWindow(QtGui.QWidget):
 
      xmag=self.width()/self.display.columns
      ymag=self.height()/self.display.rows
-     sz=10
+
+     
+     # FIXME: crappy heuristic to get the font to fit in the window.
+     myfont=QtGui.QFont("Courier")
+     #myfm=QtGui.QFontMetrics(myfont)
+     myfont.setPixelSize(int(xmag*1.7)) 
+     myfont.setWeight(QtGui.QFont.Bold)
+
+
      path = QtGui.QPainterPath()
      painter = QtGui.QPainter(self)
      # need to select a monospaced / fixed character width font for co-ordinates to work.
-     painter.setFont(QtGui.QFont("Courier" ))
+     painter.setFont(myfont)
      # FIXME: perhaps painter.setStretch(... some function of xmag... ) to fill window...
 
      painter.begin(self)

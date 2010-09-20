@@ -35,6 +35,7 @@ class GUI(QtGui.QMainWindow):
   def __button( self, text, parent, action, otheraction=None ):
     w = QtGui.QPushButton(text, parent)
     w.setAutoRepeat(True)
+    w.setAutoRepeatDelay(2000)
     self.connect(w, QtCore.SIGNAL('clicked()'), action)
     if otheraction != None:
        self.connect(w, QtCore.SIGNAL('clicked()'), otheraction)
