@@ -138,15 +138,9 @@ class GUI(QtGui.QMainWindow):
     self.__go(0,0,-1)
 
   def __connect(self):
-    #self.serial.connect( ... with baud etc.. set.
 
-    #self.__logit( "connecting..." )
-    #self.__logit( "speed: %s " % self.stg.bps.currentText() )
-    #self.__logit( "device: %s " % self.stg.portselect.currentText() )
-    #self.__logit( "file write: %d " % self.stg.sim.isChecked() )
-    #self.__logit( "no ack: %d " % self.stg.noack.isChecked() )
-    #self.__logit( "network server: %d " % self.stg.netsrv.isChecked() )
-    #self.__logit( "network client: %d " % self.stg.netcli.isChecked() )
+    if self.connected:
+       return
 
     flags = 0 
     if self.stg.sim.isChecked() : 
@@ -158,9 +152,6 @@ class GUI(QtGui.QMainWindow):
     if self.stg.netcli.isChecked():
         flags = flags | 8
 
-    #if self.bmf != None:
-    #   del self.bmf
-
     self.bmf = bmf.bmf(str(self.stg.portselect.currentText()),
              speed=int(str(self.stg.bps.currentText())), 
              flags=flags,
@@ -168,6 +159,16 @@ class GUI(QtGui.QMainWindow):
              display=self.charDisplay )
     self.connected = True
   
+  def __disconnect(self):
+     if not self.connected:
+       return
+
+     self.bmf.serial.close()
+     self.bmf=None
+     self.connected = False
+     self.__logit( "Disconnected" )
+
+
   def sendfile(self):
     filename = QtGui.QFileDialog.getOpenFileName(self, 
                   "Find Files", QtCore.QDir.currentPath())
@@ -406,8 +407,12 @@ class GUI(QtGui.QMainWindow):
     stglayout.addWidget(self.stg.netcli,4,3,1,2)
 
     self.stg.connect = self.__button('Connect', self.stg, self.__connect)
-    stglayout.addWidget(self.stg.connect,5,0,1,4)
+    stglayout.addWidget(self.stg.connect,5,0,1,2)
     self.stg.connect.setAutoRepeat(False)
+
+    self.stg.disconnect = self.__button('DisConnect', self.stg, self.__disconnect)
+    stglayout.addWidget(self.stg.disconnect,5,2,1,2)
+    self.stg.disconnect.setAutoRepeat(False)
 
     self.stg.showlabel = QtGui.QLabel("Show:")
     stglayout.addWidget(self.stg.showlabel,6,0)

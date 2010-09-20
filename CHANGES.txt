@@ -1,6 +1,4 @@
 TODO:
-  -- clear screen command in Testing.
-  -- remove autorepeat from Connect.
   -- disconnect.
   -- subtract Acks?  Do we need them?
   -- add LEDS?
@@ -30,6 +28,8 @@ unknown/WILL NOT DO:
 
 
 DONE:
+  -- clear screen command in Testing.
+  -- remove autorepeat from Connect.
 
 
 2010/09/18:
