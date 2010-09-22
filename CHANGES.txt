@@ -15,6 +15,11 @@ unknown/WILL NOT DO:
      will not match, because have to convert to decimals, and will not match
      integer counters. 
 
+2010/09/21:
+  -- bugfix regressions for intel hex send (binrec)
+  -- bugfix regression for send button binding.
+  -- bugfix clear screen decode meant nothing gets displayed.
+  -- enhancement: hello prints in various places. 
 
 2010/09/19:
   -- have font selection fill window in char display
