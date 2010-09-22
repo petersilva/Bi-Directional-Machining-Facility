@@ -19,6 +19,8 @@ from . import LogDisplay
 from . import CharDisplay
 from . import CharDisplayWindow
 
+# for exercise
+import random
 
 
 class GUI(QtGui.QMainWindow):
@@ -282,7 +284,7 @@ class GUI(QtGui.QMainWindow):
     self.kp2.origin = self.__button('Origin', self.kp2, self.__sendkey)
     kp2layout.addWidget(self.kp2.origin,4,1)
 
-    self.kp2.send = self.__button('Send', self.kp2, self.__sendkey)
+    self.kp2.send = self.__button('Send', self.kp2, self.sendfile)
     kp2layout.addWidget(self.kp2.send,4,2)
 
     self.kp2.ss = self.__button('Start/Stop', self.kp2, self.__sendToggleKey)
@@ -458,10 +460,10 @@ class GUI(QtGui.QMainWindow):
 
 
   def __exit( self ):
+     self.__disconnect()
      self.log.close()
      self.counters.close()
      self.close()
-     self.bmf.serial.close()
      
   def __clear(self):
      self.charDisplay.clear()
@@ -470,12 +472,13 @@ class GUI(QtGui.QMainWindow):
      else:
          self.charDisplayWindow.update()
      
+
   def exercise( self ):
      self.charDisplay.writeStringXY(0,0, "0123456789012345678901234567890123456789012345678")
      self.charDisplay.writeStringXY(self.exx,self.exy,"Hello")
 
-     self.exy+=1
-     self.exx+=4
+     self.exy=random.randint(0,self.charDisplay.rows-1)
+     self.exx=random.randint(0,self.charDisplay.columns-1)
 
      if self.connected:
          self.bmf.counters[0]=1000*self.exx

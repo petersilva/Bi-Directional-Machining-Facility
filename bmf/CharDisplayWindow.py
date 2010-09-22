@@ -51,11 +51,11 @@ class CharDisplayWindow(QtGui.QWidget):
      painter = QtGui.QPainter(self)
      # need to select a monospaced / fixed character width font for co-ordinates to work.
      painter.setFont(myfont)
+     painter.setBackgroundMode(QtCore.Qt.OpaqueMode)  # default is TransparentMode
      # FIXME: perhaps painter.setStretch(... some function of xmag... ) to fill window...
 
-     painter.begin(self)
-
-     painter.save()
+     #painter.begin(self)
+     #painter.save()
 
      # print all the characters on the "screen."
      j=0
@@ -66,9 +66,13 @@ class CharDisplayWindow(QtGui.QWidget):
          #print "printing: %d, %s" % (  j, self.msg[j] ) 
          painter.drawText(pt,self.display.msg[j])
          j+=1
+         if j/2.0 == 0.0:
+            painter.setBrush(QtCore.Qt.red)
+         else:
+            painter.setBrush(QtCore.Qt.blue)
 
-     painter.restore()
-     painter.end()
+     #painter.restore()
+     #painter.end()
 
 
 #  def write(self,x,y,str):

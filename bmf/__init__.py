@@ -363,7 +363,7 @@ class bmf:
 
         # build binary record, including checksum and padding.
         self.binrec = FRAME_TYPE_HEX + chunk + chr(cksum) 
-        padlen = BMF_BULK_RECORD_LENGTH - len(binrec) 
+        padlen = BMF_BULK_RECORD_LENGTH - len(self.binrec) 
         self.binrec += '\0' * padlen
 
         self.writecmd( self.binrec,
@@ -431,7 +431,7 @@ class bmf:
          self.writecmd(self.binrec, "error on line %d" % line_number )
          # FIXME: does not abort transfer... on error.
 
-         byte_count += len(binrec) 
+         byte_count += len(self.binrec) 
 
      #FIXME: pray hex file is well-formed so switch back to command 
      #       mode happens.
