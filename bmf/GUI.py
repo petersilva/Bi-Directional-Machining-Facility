@@ -323,10 +323,17 @@ class GUI(QtGui.QMainWindow):
 
   def __routineUpdate(self):
 
+    # try to avoid updates piling on each other...
+    if self.update_in_progress:
+       return
+    self.update_in_progress=True
+
     if self.connected:
         self.bmf.readpending(self.__guiupdate)
     else:
         self.__guiupdate()
+
+    self.update_in_progress=False
 
         
 
@@ -556,6 +563,7 @@ class GUI(QtGui.QMainWindow):
      self.show()
      self.setCentralWidget(self.mainwin)
 
+     self.update_in_progress=False
      self.updateTimer = QtCore.QTimer(self)
      self.connect(self.updateTimer, QtCore.SIGNAL("timeout()"), self.__routineUpdate )
      self.updateTimer.setInterval(50)
