@@ -32,9 +32,9 @@ keycodes = {
      '7' : 7, '8' : 8, '9' : 9,           # 7,8,9
      '0' : 0, '.' : 46, '+/-' : 94,         # 0,.,^
      # keypad 2.
-     'NW' : 113, 'Up' : 119, 'NE': 101,      # q,w,e
-     'Left': 97, 'Stop': 115, 'Right': 100,  # a,s,d
-     'SW' : 122, 'Down':120, 'SE':99,        # z,x,c
+     'NW' : 113, 'N' : 119, 'NE': 101,      # q,w,e
+     'W': 97, 'Stop': 115, 'E': 100,  # a,s,d
+     'SW' : 122, 'S':120, 'SE':99,        # z,x,c
      '+' : 43,  'Speed': 83, '-': 45,        # +,<,=
      'Hi/Lo': 60, 'Origin': 61, 'Start/Stop': 62,   # , , >
      'FF': 255, 'Up': 63, 'Down': 64,
@@ -84,6 +84,12 @@ class bmf:
      self.msgcallback=msgcallback
      self.display=display
 
+     self.counters = []
+     i=0
+     while i < 255:
+        self.counters.append(0) 
+        i+=1
+
      if self.flags & FLAG_WRITE_FILE:
         self.msgcallback( "simulation by writing to: %s" % dev )
         self.serial = open(dev,'w')
@@ -97,16 +103,10 @@ class bmf:
        self.poll = select.poll()
        self.poll.register(self.serial.fileno(),select.POLLIN)
 
-       return
      else:
-	self.msgcallback( "serial port: connecting to %s at %d" % (self.dev,speed) )
-        self.serial = serial.Serial(dev,baudrate=speed)
-
-     self.counters = []
-     i=0
-     while i < 255:
-        self.counters.append(0) 
-        i+=1
+	self.msgcallback( "serial port: connecting to %s at %d" % 
+				(self.dev,speed) )
+        self.serial = serial.Serial(dev,baudrate=speed,timeout=None)
 
 
 
@@ -136,7 +136,7 @@ class bmf:
             continue
 
      if s is None:
-       print 'could not open socket'
+       self.msgcallback( 'could not open socket' )
        return
 
      self.serial, addr = s.accept()
@@ -155,7 +155,6 @@ class bmf:
      for res in socket.getaddrinfo( str(host), int(port), socket.AF_UNSPEC, socket.SOCK_STREAM ):
         af, socktype, proto, canonname, sa = res
 
-        print res
         try:
             s = socket.socket(af, socktype, proto)
         except socket.error, msg:
@@ -169,7 +168,7 @@ class bmf:
             continue
         break
      if s is None:
-        print 'could not open socket'
+        self.msgcallback( 'could not open socket' )
         sys.exit(1)
 
      self.serial=s
@@ -181,6 +180,8 @@ class bmf:
      """ 
          received a garbled command, do work to get back to known state.
      """
+     self.msgcallback("resync!")
+     self.__readline()
      return
      
   def __readn(self,nbytes=1):
@@ -226,24 +227,41 @@ class bmf:
                does not retry reads for incomplete... 
      """
 
+     self.disable_updates=True
      if self.flags & FLAG_WRITE_FILE : 
 	return 0 # by definition, file will never answer.
  
      if not block:
        if self.flags & (FLAG_NET_CLIENT|FLAG_NET_SERVER):
-           if self.poll.poll(0) == [] :# check, without waiting, for pending read.   
+           pollresult = self.poll.poll(0)
+     
+           if pollresult == [] :# check, without waiting, for pending read.   
               return 0 # no pending data, we are done.
+           print pollresult
        elif self.serial.inWaiting() == 0:   # pyserial specific call...
-        return 0 # no data received, we are done!
+           return 0 # no data received, we are done!
 
+     print "readcmd past blocking if"
      r=self.__readn()
      if r == '':
         return 0 # FIXME: on socket, polling not working?
+     print "past blank if"
      cmd=ord(r)
+     print "cmd=%02x" % cmd
    
      if cmd == 0x80: #enter blockmode, prepare to rx data.
-        print "Not Implemented: receive Intel Hex format data. "
-        return 1
+        linefeed=self.__readn()
+        #self.writecmd("%c%c%c" % ( 0x83, 0, 0x0a )) # ack the line.
+        return 0
+     elif cmd == 0x0a: # currupted, resync in prog... but next will be good...
+        return 0
+     elif cmd == 0x3a : # receive an intel hex block (24 chars.)
+        line = self.__readn(23)  # read the line
+        self.writecmd("%c%c%c" % ( 0x83, 0, 0x0a )) # ack the line.
+        datalen=ord(line[0])
+        self.msgcallback( "rx blk, length=%d, acked." % datalen )
+        return 0
+
      elif cmd == 0x81: # display character string
         coords = self.__readn(2)
         if (len(coords) < 2):
@@ -276,28 +294,28 @@ class bmf:
      elif cmd == 0x83: # response status from last command received.
         buf=self.__readn(2)
         if ord(buf[1]) != 0x0a:
-            self.msgcallback( "response corrupted" )
+            self.msgcallback( "no line feed! response corrupted" )
             return 2
         if ord(buf[0]) == 0x00:
+            self.msgcallback( "acknowledged!" )
             return 0  # command succeeded.
         if ord(buf[0]) == 0x01: # blockmode resend current binrec
-            self.serial.write(self.binrec)
-            self.serial.flush()
+            self.writecmd(self.binrec)
             self.last_command_message="resent."
-            self.msgcallback( "resending block" )
+            self.msgcallback( "nack! resending block" )
             return self.readcmd(True)
         else: # undefined error 
-            print "error %d: %s" % (ord(buf[0]), self.last_command_message )
+            self.msgcallback( "error %d: %s" % 
+                       (ord(buf[0]), self.last_command_message ) )
             return ord(buf[0])
-            self.msgcallback( "error: %d", ord(buf[0]) )
      else: # command...
+        self.msgcallback( "Received Key: %02x reading rest of line" % cmd)
         s = self.__readline()
-        self.msgcallback( "Received Key: %02x" % cmd)
-        return 1
+        return 0
       
 
 
-  def writecmd(self,buf,message,block=False):
+  def writecmd(self,buf,message='write failed',block=False):
      """
        write buf to the port, wait for ack, if bad exit, post message.
 
@@ -311,7 +329,6 @@ class bmf:
 
      self.last_command_message=message
 
-     return self.readcmd(block)
 
   def sendKey(self,str):
      key=keycodes[str]
@@ -320,6 +337,7 @@ class bmf:
           "%c%c" % ( key, TRIGGER_INTERRUPT ),
            "error on send of key: %s" % str
      )
+     self.readcmd(False)
 
   def sendbulkbinbuffer(self,data,baseaddress=4000):
      """
@@ -341,17 +359,18 @@ class bmf:
      mx = len(data)
      addr=baseaddress
      while i < mx:
+        self.msgcallback( "sendbulkbin looping: %d" % i )
         last=i+chunksz
         if last >= mx:
           last=mx
 
         # build chunk of data for xfer...
         addr=baseaddress + i
-        print "addr: %04x" % addr
+        #print "addr: %04x" % addr
         address1= (addr & 0xff00) >> 8
         address2= (addr & 0x00ff)
-        print "last-i=%d, address1=%02x, address2=%02x" % \
-               (last-i,address1,address2)
+        #print "last-i=%d, address1=%02x, address2=%02x" % \
+        #       (last-i,address1,address2)
         prefix = "%c%c%c\0" % (last-i,address1,address2)
         chunk = prefix + data[i:last]
 
@@ -364,15 +383,18 @@ class bmf:
         # build binary record, including checksum and padding.
         self.binrec = FRAME_TYPE_HEX + chunk + chr(cksum) 
         padlen = BMF_BULK_RECORD_LENGTH - len(self.binrec) 
-        self.binrec += '\0' * padlen
+        self.binrec += '\0' * (padlen - 1)
+        self.binrec += TRIGGER_INTERRUPT 
 
         self.writecmd( self.binrec,
               "error between bytes %d and %d" % (i,last), True )
+        self.readcmd(True)
         i=last
 
      # switch back to command mode...
      self.writecmd( FRAME_TYPE_HEX + '\00' * 3 + "\x01\xFF" + '\0' * 18,
               "error on return to command mode", True )   
+     self.readcmd(False)
 
   def sendbulkbin(self,filename,baseaddress=0x4000):
     f=open(filename, 'r')  # might need binary mode 'b' under windows.
@@ -398,7 +420,6 @@ class bmf:
 
     rec=record[1:end]
     
-    print "record: +%s+, length=%d" % ( rec, len(rec))
     record_to_write = FRAME_TYPE_HEX + binascii.unhexlify(rec)
 
     # pad to 24 characters long with NULLS.
@@ -424,18 +445,19 @@ class bmf:
      line_number=0
      byte_count=0
      for hexstringrecord in f :
-         print "hexstringrecord: ", hexstringrecord
          self.binrec = self.__hexrecord2bin(hexstringrecord)
 
          line_number +=1
          self.writecmd(self.binrec, "error on line %d" % line_number )
          # FIXME: does not abort transfer... on error.
+         self.readcmd(block=True)
 
          byte_count += len(self.binrec) 
 
      #FIXME: pray hex file is well-formed so switch back to command 
      #       mode happens.
-     #print( "lines: %d, bytes: %d written." % ( line_number, byte_count ) )
+     self.msgcallback( "lines: %d, bytes: %d written." % 
+                               ( line_number, byte_count ) )
      f.close()
 
 

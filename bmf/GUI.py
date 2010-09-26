@@ -251,13 +251,13 @@ class GUI(QtGui.QMainWindow):
     self.kp2.ne = self.__button('NE', self.kp2, self.__sendkey, self.__goNE)
     kp2layout.addWidget(self.kp2.ne,0,2)
 
-    self.kp2.left = self.__button('Left', self.kp2, self.__sendkey, self.__goW)
+    self.kp2.left = self.__button('W', self.kp2, self.__sendkey, self.__goW)
     kp2layout.addWidget(self.kp2.left,1,0)
 
     self.kp2.stop = self.__button('Stop', self.kp2, self.__sendkey )
     kp2layout.addWidget(self.kp2.stop,1,1)
 
-    self.kp2.right = self.__button('Right', self.kp2, self.__sendkey, self.__goE)
+    self.kp2.right = self.__button('E', self.kp2, self.__sendkey, self.__goE)
     kp2layout.addWidget(self.kp2.right,1,2)
 
     self.kp2.sw = self.__button('SW', self.kp2, self.__sendkey, self.__goSW)
@@ -552,7 +552,7 @@ class GUI(QtGui.QMainWindow):
 
      self.updateTimer = QtCore.QTimer(self)
      self.connect(self.updateTimer, QtCore.SIGNAL("timeout()"), self.__routineUpdate )
-     self.updateTimer.setInterval(500)
+     self.updateTimer.setInterval(50)
      self.updateTimer.start()
 
 
