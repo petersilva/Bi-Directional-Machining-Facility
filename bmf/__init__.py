@@ -202,6 +202,23 @@ class bmf:
      return s
           
 
+  def pending(self):
+    if self.flags & (FLAG_NET_CLIENT|FLAG_NET_SERVER):
+         pollresult = self.poll.poll(0)
+     
+         if pollresult == [] :# check, without waiting, for pending read.   
+              return False # no pending data, we are done.
+         print pollresult
+    elif self.serial.inWaiting() == 0:   # pyserial specific call...
+           return False # no data received, we are done!
+
+    return True
+
+  def readpending(self):
+     while self.pending():
+	self.readcmd()
+
+
   def readcmd(self,block=False):
      """
      purpose:
@@ -232,14 +249,8 @@ class bmf:
 	return 0 # by definition, file will never answer.
  
      if not block:
-       if self.flags & (FLAG_NET_CLIENT|FLAG_NET_SERVER):
-           pollresult = self.poll.poll(0)
-     
-           if pollresult == [] :# check, without waiting, for pending read.   
-              return 0 # no pending data, we are done.
-           print pollresult
-       elif self.serial.inWaiting() == 0:   # pyserial specific call...
-           return 0 # no data received, we are done!
+        if not self.pending():
+		return 0
 
      print "readcmd past blocking if"
      r=self.__readn()
@@ -337,7 +348,7 @@ class bmf:
           "%c%c" % ( key, TRIGGER_INTERRUPT ),
            "error on send of key: %s" % str
      )
-     self.readcmd(False)
+     self.readpending()
 
   def sendbulkbinbuffer(self,data,baseaddress=4000):
      """
@@ -394,7 +405,7 @@ class bmf:
      # switch back to command mode...
      self.writecmd( FRAME_TYPE_HEX + '\00' * 3 + "\x01\xFF" + '\0' * 18,
               "error on return to command mode", True )   
-     self.readcmd(False)
+     self.readpending(False)
 
   def sendbulkbin(self,filename,baseaddress=0x4000):
     f=open(filename, 'r')  # might need binary mode 'b' under windows.

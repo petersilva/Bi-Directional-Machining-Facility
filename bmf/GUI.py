@@ -304,7 +304,7 @@ class GUI(QtGui.QMainWindow):
   def __routineUpdate(self):
 
     if self.connected:
-        self.bmf.readcmd()
+        self.bmf.readpending()
 
         if self.bmf.updateReceived:
            self.updateGUICounters()
