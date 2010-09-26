@@ -301,16 +301,13 @@ class GUI(QtGui.QMainWindow):
 
     self.tab.addTab(self.kp2,"Commands")
 
-  def __routineUpdate(self):
-
+  def __guiupdate(self):
     if self.connected:
-        self.bmf.readpending()
-
         if self.bmf.updateReceived:
            self.updateGUICounters()
            self.charDisplayWindow.update()
            self.bmf.updateReceived = False
-        
+
     # ensure radio button consistency.
     if self.stg.sim.isChecked() : 
        if not self.stg.noack.isChecked(): 
@@ -323,6 +320,15 @@ class GUI(QtGui.QMainWindow):
     if self.stg.netcli.isChecked():
        if self.stg.sim.isChecked() : 
            self.stg.sim.setChecked(False)
+
+  def __routineUpdate(self):
+
+    if self.connected:
+        self.bmf.readpending(self.__guiupdate)
+    else:
+        self.__guiupdate()
+
+        
 
   def __otherPort(self):
     op, ok = QtGui.QInputDialog.getText(self,"Other Port", "Port Address")

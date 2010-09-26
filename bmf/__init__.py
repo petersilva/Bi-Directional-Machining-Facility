@@ -214,10 +214,11 @@ class bmf:
 
     return True
 
-  def readpending(self):
+  def readpending(self,callback=None):
      while self.pending():
 	self.readcmd()
-
+        if callback != None:
+            callback()
 
   def readcmd(self,block=False):
      """
@@ -405,7 +406,7 @@ class bmf:
      # switch back to command mode...
      self.writecmd( FRAME_TYPE_HEX + '\00' * 3 + "\x01\xFF" + '\0' * 18,
               "error on return to command mode", True )   
-     self.readpending(False)
+     self.readpending()
 
   def sendbulkbin(self,filename,baseaddress=0x4000):
     f=open(filename, 'r')  # might need binary mode 'b' under windows.
