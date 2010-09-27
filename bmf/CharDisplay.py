@@ -9,13 +9,17 @@ class CharDisplay:
      self.msg = [ "", "" ]
      j=0
      while j < self.rows:
-         self.msg.append( " " * self.columns )
+         self.msg.append( "" )
          j+=1
+     self.clearUpdates()
+
+  def clearUpdates(self):
+     self.updates=[]
 
   def clear(self):
      j=0
      while j < self.rows:
-         self.msg[j]= " " * self.columns 
+         self.msg[j]= ""
          j+=1
 
   def writeStringXY(self,x,y,str):
@@ -31,6 +35,11 @@ class CharDisplay:
 
      #print "write, self.msg[%d] before: +%s+" % ( y, self.msg[y] )
 
+     # if msg is too short, pump it up...
+     oldy=len(self.msg[y])
+     if oldy < x:
+         self.msg[y] = self.msg[y] + " " * (x-oldy)
+
      xend = x + len(str)
      if xend < self.columns:
          # if it fits on the screen, just substitute the string within the line.
@@ -40,4 +49,6 @@ class CharDisplay:
          str_cutoff = len(str) - (xend - self.columns)
          self.msg[y]= self.msg[y][0:x] + str[0:str_cutoff]
 
+     self.msg[y].strip()
+     self.updates.append(y)
 

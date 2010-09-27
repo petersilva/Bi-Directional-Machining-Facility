@@ -90,6 +90,8 @@ class bmf:
         self.counters.append(0) 
         i+=1
 
+     self.read_buffer = ""
+
      if self.flags & FLAG_WRITE_FILE:
         self.msgcallback( "simulation by writing to: %s" % dev )
         self.serial = open(dev,'w')
@@ -185,10 +187,35 @@ class bmf:
      return
      
   def __readn(self,nbytes=1):
+     """
+          read n bytes... blocking until you do...
+     """
+
      if self.flags & (FLAG_NET_CLIENT|FLAG_NET_SERVER):
-	return self.serial.recv(nbytes)
+         while len(self.read_buffer) < nbytes:
+            to_add = self.serial.recv(nbytes-len(self.read_buffer))
+            # FIXME: This is debug code anyways.  code loops infinitely on
+            #   remote hangup.  Good fix would be to catch the hangup, this
+            #   is an unfortunate place holder.
+            if len(to_add) == 0:
+                print "FIXME: read 0 bytes when there really should have been more..."
+                print "so I decided to exit... more elegant ideas welcome!"
+		sys.exit()  
+	    self.read_buffer += to_add
+
      else:
-	return self.serial.read(nbytes)
+         # read any bytes that are ready...
+         self.read_buffer += self.serial.read(self.serial.inWaiting())
+
+         # if that isn't enough, then block and ready until it is...
+         while len(self.read_buffer) < nbytes:
+	    self.read_buffer += self.serial.read(nbytes-len(self.read_buffer))
+
+
+     buf=self.read_buffer[0:nbytes]
+     self.read_buffer = self.read_buffer[nbytes:]
+     return buf
+
 
   def __readline(self):
      """ calls readn to read an entire line, returns the string, with the\n
@@ -208,11 +235,15 @@ class bmf:
      
          if pollresult == [] :# check, without waiting, for pending read.   
               return False # no pending data, we are done.
-         print pollresult
-    elif self.serial.inWaiting() == 0:   # pyserial specific call...
-           return False # no data received, we are done!
 
-    return True
+         return True
+
+    elif ( len(self.read_buffer) > 0 ) or ( self.serial.inWaiting() > 0): 
+         return True
+
+    else:
+         return False # no data received, we are done!
+
 
   def readpending(self,callback=None):
      while self.pending():
@@ -253,13 +284,12 @@ class bmf:
         if not self.pending():
 		return 0
 
-     print "readcmd past blocking if"
      r=self.__readn()
      if r == '':
+        #sys.exit() 
         return 0 # FIXME: on socket, polling not working?
-     print "past blank if"
      cmd=ord(r)
-     print "cmd=%02x" % cmd
+     #print "cmd=%02x" % cmd
    
      if cmd == 0x80: #enter blockmode, prepare to rx data.
         linefeed=self.__readn()
@@ -297,11 +327,11 @@ class bmf:
         buf=self.__readn(4)
         counter_index = ord(buf[0])
         counter_value  = ord(buf[1])*256+ord(buf[2])
-        if buf[3] != TRIGGER_INTERRUPT:
-           self.msgcallback( "malformed counter update, lost sync..." )
-           self.resync()
         self.counters[counter_index] = counter_value       
         self.updateReceived=True
+        if ord(buf[3]) != TRIGGER_INTERRUPT:
+           self.msgcallback( 
+             "malformed counter update. last char is: 0x%02x " % ord(buf[3]) )
         return 0
      elif cmd == 0x83: # response status from last command received.
         buf=self.__readn(2)

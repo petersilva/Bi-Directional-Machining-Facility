@@ -18,31 +18,38 @@ class LogWindow(QtGui.QDialog):
 
   def add(self,msg):
 
-     self.log_entries.append( [ self.log_index, msg ] )
+     #self.log_entries.append( [ self.log_index, msg ] )
      self.log_index +=1 
-     leTime = QtGui.QTableWidgetItem(time.strftime("%H:%M",time.localtime())) 
      #leTime.setFlags(QtCore.QtItemIsEnabled | QtCore.Qt.ItemIsSelectable)
+     #scroll, remove last...
+     if self.log_index >= self.max_entries:
+          self.messageTable.removeRow(self.max_entries)
+
+     # insert new item...
      self.messageTable.insertRow(0)
+     leTime = QtGui.QTableWidgetItem(time.strftime("%H:%M",time.localtime())) 
      self.messageTable.setItem(0,0, leTime)
      leMsg = QtGui.QTableWidgetItem(msg) 
      self.messageTable.setItem(0,1, leMsg)
+     self.messageTable.setCurrentCell(0,0)
+
      self.last_message = msg
-     #print self.log_entries
-     print msg
+     #print msg
      self.post_callback(msg)
 
 
 
-  def __init__(self,post_callback=None,parent=None):
+  def __init__(self,post_callback=None,parent=None,max_entries=100):
      super(LogWindow, self).__init__(parent)
      
      self.post_callback=post_callback
-     self.log_entries = []
+     #self.log_entries = []
      self.log_index = 0
+     self.max_entries=max_entries
      self.messageTable = QtGui.QTableWidget(1,2,self)
      self.resize(400,400)
      self.messageTable.setHorizontalHeaderLabels(("Time","Message"))
-     self.messageTable.horizontalHeader().setResizeMode( 0, QtGui.QHeaderView.Stretch)
+     self.messageTable.horizontalHeader().setResizeMode( 0, QtGui.QHeaderView.Fixed)
      self.messageTable.horizontalHeader().setResizeMode( 1, QtGui.QHeaderView.Stretch)
      self.showing_window=1
 

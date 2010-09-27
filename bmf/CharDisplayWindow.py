@@ -29,7 +29,8 @@ class CharDisplayWindow(QtGui.QWidget):
 
   def paintEvent(self,event):
      """
-       repaints the entire display, based on current contents of self.msg
+       repaints the entire display, based on current contents of self.display
+        which defines rows, columns, and msg provides contents.
 
      """
 
@@ -54,69 +55,28 @@ class CharDisplayWindow(QtGui.QWidget):
      painter.setBackgroundMode(QtCore.Qt.OpaqueMode)  # default is TransparentMode
      # FIXME: perhaps painter.setStretch(... some function of xmag... ) to fill window...
 
-     #painter.begin(self)
-     #painter.save()
 
      # print all the characters on the "screen."
-     j=0
-     y=0
-     while j < self.display.rows:
-         y+=ymag
-         pt = QtCore.QPoint(0,y)
-         #print "printing: %d, %s" % (  j, self.msg[j] ) 
-         painter.drawText(pt,self.display.msg[j])
-         j+=1
-         if j/2.0 == 0.0:
-            painter.setBrush(QtCore.Qt.red)
-         else:
-            painter.setBrush(QtCore.Qt.blue)
+     
+     for j in xrange(0,self.display.rows-1):
+         if self.display.msg[j] == "":
+            continue
+         painter.drawText(QtCore.QPoint(0,ymag*(j+1)),self.display.msg[j])
 
-     #painter.restore()
-     #painter.end()
+     self.display.clearUpdates()
 
-
-#  def write(self,x,y,str):
-#     """
-#        write a given str at row y in column x.
-#
-#     """
-# 
-#     # refuse to draw out of bounds...
-#     if ( x > self.columns ) or ( y >= self.rows ):
-#        self.add( "origin off of screen: row=%d, column=%d" % ( y, x ) )
-#	return
-#
-#     #print "write, self.msg[%d] before: +%s+" % ( y, self.msg[y] )
-#
-#     xend = x + len(str)
-#     if xend < self.columns:
-#         # if it fits on the screen, just substitute the string within the line.
-#         self.msg[y]= self.msg[y][0:x] + str + self.msg[y][xend:]
-#     else:
-#         # if it replaces the end of the line, then change the end...
-#         str_cutoff = len(str) - (xend - self.columns)
-#         self.msg[y]= self.msg[y][0:x] + str[0:str_cutoff] 
-#     self.update() 
 
   def setDisplay(self,display):
      self.display = display
 
   def __init__(self,log,display=None,parent=None):
      """
-     Initialize the character display of columns width  x rows height.
+     Initialize the character display. 
      """
      super(CharDisplayWindow, self).__init__(parent)
 
-     print "hi from z80 init"
-
      self.log = log
      self.setDisplay(display)
-
-     #self.msg = [ "", "" ]
-     #j=0
-     #while j < self.rows:
-     #    self.msg.append( " " * self.columns )
-     #    j+=1
 
      self.pixmap = QtGui.QPixmap()
      self.pen = QtGui.QPen()

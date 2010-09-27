@@ -30,6 +30,7 @@ class GUI(QtGui.QMainWindow):
 
   def __logit( self, text ):
     self.log.add(text)
+    self.__guiupdate()
 
   def __logUI(self,msg):
     self.statusBar().showMessage(msg)
@@ -38,6 +39,7 @@ class GUI(QtGui.QMainWindow):
     w = QtGui.QPushButton(text, parent)
     w.setAutoRepeat(True)
     w.setAutoRepeatDelay(2000)
+    w.setAutoRepeatInterval(50)
     self.connect(w, QtCore.SIGNAL('clicked()'), action)
     if otheraction != None:
        self.connect(w, QtCore.SIGNAL('clicked()'), otheraction)
@@ -65,7 +67,7 @@ class GUI(QtGui.QMainWindow):
     kk= QtCore.QObject.sender(self)
     self.__logit( "%s toggle flipped" % kk.text() )
     self.bmf.sendKey(str(kk.text()))
-    # add somthing so toggle stays depressed.
+    # FIXME:  add somthing so toggle stays depressed.
 
   def __mark(self):
     self.counters.rxc.display(0)
@@ -78,7 +80,7 @@ class GUI(QtGui.QMainWindow):
     x=self.counters.axc.value()
     y=self.counters.ayc.value()
     z=self.counters.azc.value()
-    print "go at: %d,%d,%d" % (x, y, z)
+    #print "go at: %d,%d,%d" % (x, y, z)
     limit=False
     x+=xoff
     y+=yoff
@@ -89,7 +91,7 @@ class GUI(QtGui.QMainWindow):
        return 
 
  
-    print "going to: %d,%d,%d" % (x, y, z)
+    #print "going to: %d,%d,%d" % (x, y, z)
 
     self.bmf.counters[0] = x
     self.bmf.counters[1] = y
@@ -302,11 +304,18 @@ class GUI(QtGui.QMainWindow):
     self.tab.addTab(self.kp2,"Commands")
 
   def __guiupdate(self):
+    
+    now=time.clock()
+    if (now-self.last_update) < 0.2:
+        return
+
     if self.connected:
         if self.bmf.updateReceived:
            self.updateGUICounters()
            self.charDisplayWindow.update()
            self.bmf.updateReceived = False
+ 
+    self.last_update=time.clock()
 
     # ensure radio button consistency.
     if self.stg.sim.isChecked() : 
@@ -482,8 +491,7 @@ class GUI(QtGui.QMainWindow):
      self.charDisplay.clear()
      if self.connected:
         self.bmf.updateReceived=True
-     else:
-         self.charDisplayWindow.update()
+     self.charDisplayWindow.update()
      
 
   def exercise( self ):
@@ -509,12 +517,13 @@ class GUI(QtGui.QMainWindow):
      self.exx=4
      self.exy=4
 
+     self.connected = (bmf != None) 
+
      self.log=LogDisplay.LogWindow(self.__logUI)
-     self.__logit("Startup...")
+     #self.__logit("Startup...")
 
      self.bmf=bmf
 
-     self.connected = (self.bmf != None) 
 
      self.charDisplay=CharDisplay.CharDisplay(self.__logit) 
      self.charDisplayWindow=CharDisplayWindow.CharDisplayWindow(self.__logit,self.charDisplay)
@@ -563,11 +572,12 @@ class GUI(QtGui.QMainWindow):
      self.show()
      self.setCentralWidget(self.mainwin)
 
+     self.last_update=time.clock()
      self.update_in_progress=False
      self.updateTimer = QtCore.QTimer(self)
      self.connect(self.updateTimer, QtCore.SIGNAL("timeout()"), self.__routineUpdate )
      self.updateTimer.setInterval(50)
      self.updateTimer.start()
-
+     
 
      self.__logit("Ready.")

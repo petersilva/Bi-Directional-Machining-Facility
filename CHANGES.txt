@@ -2,10 +2,10 @@ TODO:
   -- subtract Acks?  Do we need them?
   -- add LEDS?
   -- have routine updates make radiobuttons symmetrical.
+  -- have toggles stay depressed when appropriiate.
   -- make protocol symmetrical
        -- tx register setting.
        -- tx graphic display
-       -- rx intel hex stream...
   -- have programmable length of log window, for now it just fills up memory
   -- testing ack toggle.
      -- need to release server to activate client, ok?
@@ -14,6 +14,17 @@ unknown/WILL NOT DO:
   -- decimal in counters.
      will not match, because have to convert to decimals, and will not match
      integer counters. 
+
+2010/09/25:
+  -- speedups:
+	-- optimized some loops. (CharDisplay.repaint...)
+	-- ignore graphical updates < x ms. apart (see GUI.__guiupdate)
+        -- started buffering reads
+
+2010/09/25:
+  -- added crash and burn to avoid infinite loop at exit of one end of socket.
+  -- from: make protocol symmetrical
+       -- rx intel hex stream... (bogus, just discards what it rx's)
 
 2010/09/21:
   -- bugfix regressions for intel hex send (binrec)
