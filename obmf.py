@@ -37,60 +37,62 @@ def usage():
 import sys
 import getopt
 
-#port="COM2:"
-port=None
-speed=38400
-dbg=2
+def operate_bmf():
+    #port="COM2:"
+    port=None
+    speed=38400
+    dbg=2
+    
+    opts, args = getopt.getopt(sys.argv[1:],"D:p:s:V",[ 
+    "dbg=", "debug=", "port=", "speed=", "version" ])
+    
+    for o, a in opts:
+      if o in ( "-D", "--dbg", "--debug"):
+         dbg = int(a)
+      elif o in ( "-p", "--port"):
+         port = a
+      elif o in ( "-s", "--speed"):
+         speed = int(a)
+      elif o in ( "-V", "--version"):
+         print "my version..."
+      else:
+         usage()
+         sys.exit()
+    
+    if port != None:
+      b = bmf.bmf(port,speed,dbg)
+    else:
+      b = None
+    
+    
+    if len(args) == 0:
+      cmd = 'view'
+    else:
+      cmd = args[0]
+    
+    if cmd == 'view':
+      from PyQt4 import QtGui
+      from PyQt4 import QtCore
+      from bmf.GUI import GUI
+     
+      app = QtGui.QApplication(sys.argv)
+      tb = GUI(b)
+      tb.show()
+      app.exec_()
+    
+    elif cmd  == 'key' :
+      print "Send a key"
+      b.sendKey(args[1])
+    elif cmd == 'send':
+      print "Send Intel Hex file"
+      filename = args[1]
+      if (filename[-4:].lower() == '.hex'):
+         b.sendbulkhex(filename)
+      else:
+         b.sendbulkbin(filename)
+    
+    else:
+      print "some other command..."
 
-opts, args = getopt.getopt(sys.argv[1:],"D:p:s:V",[ 
-"dbg=", "debug=", "port=", "speed=", "version" ])
-
-for o, a in opts:
-  if o in ( "-D", "--dbg", "--debug"):
-     dbg = int(a)
-  elif o in ( "-p", "--port"):
-     port = a
-  elif o in ( "-s", "--speed"):
-     speed = int(a)
-  elif o in ( "-V", "--version"):
-     print "my version..."
-  else:
-     usage()
-     sys.exit()
-
-print "port: %s, speed: %d\n", port, speed
-if port != None:
-  b = bmf.bmf(port,speed,dbg)
-else:
-  b = None
-
-print 'len args is:', len(args)
-
-if len(args) == 0:
-  cmd = 'view'
-else:
-  cmd = args[0]
-
-if cmd == 'view':
-  from PyQt4 import QtGui
-  from PyQt4 import QtCore
-  from bmf.GUI import GUI
- 
-  app = QtGui.QApplication(sys.argv)
-  tb = GUI(b)
-  tb.show()
-  app.exec_()
-
-elif cmd  == 'key' :
-  print "Send a key"
-  b.sendKey(args[1])
-elif cmd == 'send':
-  print "Send Intel Hex file"
-  filename = args[1]
-  if (filename[-4:].lower() == '.hex'):
-     b.sendbulkhex(filename)
-  else:
-     b.sendbulkbin(filename)
-
-else:
-  print "some other command..."
+if __name__ == '__main__':
+    operate_bmf()
