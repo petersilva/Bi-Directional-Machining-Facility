@@ -14,6 +14,7 @@ Operate BMF - le programme pour opérer un BMF. part le GUI
 
 import bmf
 import string
+import time
 
 def usage():
   print """
@@ -24,6 +25,9 @@ def usage():
            flags:  1 - simulate: port is a write only file.
 		   2 - suppress/ignore acknowledgements
                           (implied by 1)
+                   4 - network server
+		   8 - network client
+
   command is one of:
         view  - start the keyboard GUI.
         send file.hex  - write a file in intel hex format 0
@@ -37,38 +41,27 @@ def usage():
 import sys
 import getopt
 
-def operate_bmf():
-    #port="COM2:"
-    port=None
-    speed=38400
-    dbg=2
-    
-    opts, args = getopt.getopt(sys.argv[1:],"D:p:s:V",[ 
-    "dbg=", "debug=", "port=", "speed=", "version" ])
-    
-    for o, a in opts:
-      if o in ( "-D", "--dbg", "--debug"):
-         dbg = int(a)
-      elif o in ( "-p", "--port"):
-         port = a
-      elif o in ( "-s", "--speed"):
-         speed = int(a)
-      elif o in ( "-V", "--version"):
-         print "my version..."
-      else:
-         usage()
-         sys.exit()
+last_update=0
+
+def print_msg(str):
+
+    global last_update
+
+    now=time.time()
+    #print "now: ", now, " then: ", last_update, "diff: ", now-last_update
+    if (now-last_update) < 0.2:
+        return
+    last_update=now
+    print str
+
+def operate_bmf(port=None,cmd="view",speed=38400,dbg=0):
     
     if port != None:
-      b = bmf.bmf(port,speed,dbg)
+      b = bmf.bmf(port,speed,dbg,print_msg)
     else:
       b = None
     
     
-    if len(args) == 0:
-      cmd = 'view'
-    else:
-      cmd = args[0]
     
     if cmd == 'view':
       from PyQt4 import QtGui
@@ -78,11 +71,17 @@ def operate_bmf():
       app = QtGui.QApplication(sys.argv)
       tb = GUI(b)
       tb.show()
+      QtGui.qApp = app
       app.exec_()
+      QtGui.qApp = None
+      app = None
     
     elif cmd  == 'key' :
       print "Send a key"
       b.sendKey(args[1])
+    elif cmd == 'read' :
+      while True:
+          b.readcmd(True)
     elif cmd == 'send':
       print "Send Intel Hex file"
       filename = args[1]
@@ -95,4 +94,30 @@ def operate_bmf():
       print "some other command..."
 
 if __name__ == '__main__':
-    operate_bmf()
+    #port="COM2:"
+    port=None
+    speed=38400
+    dbg=0
+    
+    opts, args = getopt.getopt(sys.argv[1:],"f:p:s:V",[ 
+    "flags=", "f=", "port=", "speed=", "version" ])
+    
+    for o, a in opts:
+      if o in ( "-f", "--f", "--flags"):
+         dbg = int(a)
+      elif o in ( "-p", "--port"):
+         port = a
+      elif o in ( "-s", "--speed"):
+         speed = int(a)
+      elif o in ( "-V", "--version"):
+         print "my version..."
+      else:
+         usage()
+         sys.exit()
+
+    if len(args) == 0:
+      cmd = 'view'
+    else:
+      cmd = args[0]
+
+    operate_bmf(port,cmd,speed,dbg)
