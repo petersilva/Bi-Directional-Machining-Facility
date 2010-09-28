@@ -33,7 +33,7 @@ class GUI(QtGui.QMainWindow):
     self.__guiupdate()
 
   def __logUI(self,msg):
-    self.statusBar().showMessage(msg)
+    self.msg = msg
 
   def __button( self, text, parent, action, otheraction=None ):
     w = QtGui.QPushButton(text, parent)
@@ -305,8 +305,8 @@ class GUI(QtGui.QMainWindow):
 
   def __guiupdate(self):
     
-    now=time.clock()
-    if (now-self.last_update) < 0.2:
+    now=time.time()
+    if (now-self.last_update) < 0.1:
         return
 
     if self.connected:
@@ -315,7 +315,8 @@ class GUI(QtGui.QMainWindow):
            self.charDisplayWindow.update()
            self.bmf.updateReceived = False
  
-    self.last_update=time.clock()
+    self.last_update=time.time()
+    self.statusBar().showMessage(self.msg)
 
     # ensure radio button consistency.
     if self.stg.sim.isChecked() : 
@@ -517,6 +518,7 @@ class GUI(QtGui.QMainWindow):
      self.exx=4
      self.exy=4
 
+     self.msg = "almost ready?"
      self.connected = (bmf != None) 
 
      self.log=LogDisplay.LogWindow(self.__logUI)
@@ -572,12 +574,11 @@ class GUI(QtGui.QMainWindow):
      self.show()
      self.setCentralWidget(self.mainwin)
 
-     self.last_update=time.clock()
+     self.last_update=time.time()
      self.update_in_progress=False
      self.updateTimer = QtCore.QTimer(self)
      self.connect(self.updateTimer, QtCore.SIGNAL("timeout()"), self.__routineUpdate )
      self.updateTimer.setInterval(50)
      self.updateTimer.start()
      
-
      self.__logit("Ready.")
