@@ -328,6 +328,7 @@ class bmf:
         counter_index = ord(buf[0])
         counter_value  = ord(buf[1])*256+ord(buf[2])
         self.counters[counter_index] = counter_value       
+        self.msgcallback( "counter[%d]: %d" % (counter_index,counter_value) )
         self.updateReceived=True
         if ord(buf[3]) != TRIGGER_INTERRUPT:
            self.msgcallback( 
