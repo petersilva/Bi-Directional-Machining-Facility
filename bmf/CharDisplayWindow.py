@@ -13,15 +13,11 @@ from . import LogDisplay
 
 class CharDisplayWindow(QtGui.QWidget):
   """
-    A Character addressable display having dimension columns width, by rows tall.
-    main data structure is an array of character strings: self.msg
-    there are ROWS elements in self.msg, and each element is COLUMNS long.
+    A Character addressable display based on the CharDisplay class.
     It uses a Courier as a standard fixed-width font to ensure letters show up 
      where they should.
 
     FIXME:
-        -- ideally, would check actual dimensions and adjust font to fully fill rectangle.
-           would mean adjusting point size and perhaps Stretch and Spacing (see QFont).
         -- does not do colour yet.
         -- flashing would have to be done by repainting the screen, blech...
 
@@ -42,7 +38,9 @@ class CharDisplayWindow(QtGui.QWidget):
 
      
      # FIXME: crappy heuristic to get the font to fit in the window.
+     # need to select a monospaced / fixed character width font for co-ordinates to work.
      myfont=QtGui.QFont("Courier")
+     # FIXME:  good heuristic would have something to do with font metrics.
      #myfm=QtGui.QFontMetrics(myfont)
      myfont.setPixelSize(int(xmag*1.7)) 
      myfont.setWeight(QtGui.QFont.Bold)
@@ -50,7 +48,6 @@ class CharDisplayWindow(QtGui.QWidget):
 
      path = QtGui.QPainterPath()
      painter = QtGui.QPainter(self)
-     # need to select a monospaced / fixed character width font for co-ordinates to work.
      painter.setFont(myfont)
      painter.setBackgroundMode(QtCore.Qt.OpaqueMode)  # default is TransparentMode
      # FIXME: perhaps painter.setStretch(... some function of xmag... ) to fill window...

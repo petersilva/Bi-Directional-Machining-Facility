@@ -1,6 +1,11 @@
 
 class CharDisplay:
+  """
+     A character buffer to store characters in an array of the given number of rows and columns.
+     
+     this class handles updates to the buffer, and does no display.
 
+  """
   def __init__(self,log,rows=20,columns=48):
 
      self.msgcallback=log

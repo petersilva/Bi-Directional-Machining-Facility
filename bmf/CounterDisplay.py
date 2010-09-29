@@ -13,6 +13,10 @@ from PyQt4 import QtCore
 
 
 class CounterDisplay(QtGui.QDialog):
+  """
+     provides a GUI pane with counters, currently absolute x,y,z and relative x,y,z
+
+  """
 
   def __init__(self,parent=None):
      super(CounterDisplay, self).__init__(parent)

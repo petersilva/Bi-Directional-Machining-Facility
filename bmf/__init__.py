@@ -114,7 +114,8 @@ class bmf:
 
   def sockserv(self):
      """
-	
+	Bind to a socket to await a connection from a client.
+
 	this routine hangs the application, until someone connects.
 
      """
@@ -147,7 +148,7 @@ class bmf:
 
   def sockcli(self):
      """
-         initialize a socket client.
+         initialize a socket client (connect to a server.)
 
      """
      host, port = self.dev.split(':')
@@ -189,6 +190,8 @@ class bmf:
   def __readn(self,nbytes=1):
      """
           read n bytes... blocking until you do...
+
+          there is a read-ahead buffer in serial mode, use that to minimize io calls.
      """
 
      if self.flags & (FLAG_NET_CLIENT|FLAG_NET_SERVER):
@@ -230,6 +233,11 @@ class bmf:
           
 
   def pending(self):
+    """
+      return True if there is some data the peer has sent, that has not been read.
+      return Fals if there is no data waiting for processing.
+
+    """
     if self.flags & (FLAG_NET_CLIENT|FLAG_NET_SERVER):
          pollresult = self.poll.poll(0)
      
@@ -246,6 +254,9 @@ class bmf:
 
 
   def readpending(self,callback=None):
+     """
+        process any data that has been received but not processed.
+     """
      while self.pending():
 	self.readcmd()
         if callback != None:
@@ -302,6 +313,8 @@ class bmf:
         self.writecmd("%c%c%c" % ( 0x83, 0, 0x0a )) # ack the line.
         datalen=ord(line[0])
         self.msgcallback( "rx blk, length=%d, acked." % datalen )
+        #FIXME:  does not validate checksum.
+        #FIXME:  discards data received.
         return 0
 
      elif cmd == 0x81: # display character string
@@ -362,7 +375,7 @@ class bmf:
      """
        write buf to the port, wait for ack, if bad exit, post message.
 
-       return 0 on success, otherwise, an error message.
+       silent on success, otherwise, post given error message.
      """
      if self.flags & (FLAG_NET_CLIENT|FLAG_NET_SERVER):
          self.serial.send(buf)
@@ -374,6 +387,9 @@ class bmf:
 
 
   def sendKey(self,str):
+     """
+        send a key to the peer.
+     """
      key=keycodes[str]
      self.msgcallback( "%02x sent for key: +%s+" % ( key, str ) )
      self.writecmd(
@@ -384,7 +400,7 @@ class bmf:
 
   def sendbulkbinbuffer(self,data,baseaddress=4000):
      """
-       encode in intel hex format.  stuff with nuls to 24 chars.
+       encode in intel hex format.  stuff with nuls to 23 chars, LF as 24th.
        use given baseaddress and count upwards.
        send each line, wait for status:
              0 - good, 1 - error.
@@ -439,6 +455,7 @@ class bmf:
               "error on return to command mode", True )   
      self.readpending()
 
+
   def sendbulkbin(self,filename,baseaddress=0x4000):
     f=open(filename, 'r')  # might need binary mode 'b' under windows.
     data=f.read()
@@ -467,7 +484,8 @@ class bmf:
 
     # pad to 24 characters long with NULLS.
     padlen = BMF_BULK_RECORD_LENGTH - len(record_to_write) 
-    record_to_write += '\0' * padlen
+    record_to_write += '\0' * padlen-1 
+    record_to_write += TRIGGER_INTERRUPT 
 
     return( record_to_write )
 
@@ -513,7 +531,7 @@ class bmf:
        return(keycodes.keys())
 
 if __name__ == '__main__':
-  
+   # FIXME: does this test stuff work anymore?  
    p = bmf("toto.bin",0)
    p.sendbulkhex("../intel_hex_sample.hex")
    p.sendbulkbinbuffer("\xCD\x03\x70\x21\x11\x00\xF9\xCD\x22\x72\xCD\x7C\x71\x3E\x52\x32\x20\xf0\x3e\x48\x32\x21\xf0\x3e\x52\x32\x22\xf0\x3e\x54\x32\x40\xf0\x3e\x48\x32\x41\xf0\x3e\x52\x32\x42\xf0\x3e\x49\x32\x60\xf0\xCC\xEE", 0x7000 )

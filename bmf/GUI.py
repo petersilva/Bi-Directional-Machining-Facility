@@ -24,18 +24,34 @@ import random
 
 
 class GUI(QtGui.QMainWindow):
-  """ GUI du bi-directional machining facility
-      fournit une interface graphique pour le module bmf.py
+  """ GUI for the bi-directional machining facility
+      provide a graphical user interface.
+
+      key aspect is to limit update frequency, and amount of work for accepting updates.
+      (accept far more updates than are actually posted.)
+      this is necessary to support Z80 sending several hundred updates per second, GUI could not keep up.
+
   """
 
   def __logit( self, text ):
+    """
+       save the given text to the application log, and trigger a conditional ui update.
+    """
     self.log.add(text)
+    if self.connected:
+       self.bmf.updateReceived=True
     self.__guiupdate()
 
   def __logUI(self,msg):
+    """
+        sets the status message at bottom left of GUI, (at the followup update.)
+    """
     self.msg = msg
 
   def __button( self, text, parent, action, otheraction=None ):
+    """
+       define a standard button.
+    """
     w = QtGui.QPushButton(text, parent)
     w.setAutoRepeat(True)
     w.setAutoRepeatDelay(2000)
@@ -47,11 +63,18 @@ class GUI(QtGui.QMainWindow):
 
 
   def __sendkey(self): 
+    """
+       send a key stroke event to the peer. 
+    """
     kk= QtCore.QObject.sender(self)
     self.__logit( "%s key sent" % kk.text() )
     self.bmf.sendKey(str(kk.text()))
 
   def __sendhex(self):
+    """
+      send raw hexadecimal sequence to the peer.  for Testing purposes only.
+      
+    """
     kk= str(self.tst.hexedit.text())
     try:
         hxa = map( lambda x: chr(int(x,16)), kk.split(","))
@@ -64,19 +87,27 @@ class GUI(QtGui.QMainWindow):
     self.__logit( "%s code sent" % kk )
 
   def __sendToggleKey(self): 
+    """
+      send a key event, where the key is a toggle.
+      
+      FIXME:  add somthing so toggle stays depressed. a visual cue to toggle-hood.
+    """
     kk= QtCore.QObject.sender(self)
     self.__logit( "%s toggle flipped" % kk.text() )
     self.bmf.sendKey(str(kk.text()))
-    # FIXME:  add somthing so toggle stays depressed.
 
   def __mark(self):
-    self.counters.rxc.display(0)
-    self.counters.ryc.display(0)
-    self.counters.rzc.display(0)
+
+    self.bmf.counters[3] = 0
+    self.bmf.counters[4] = 0
+    self.bmf.counters[5] = 0
     
 
   def __go(self,xoff,yoff,zoff):
-
+    """
+      move counters 0 through 5 around approproately for a displacement in any and all dimensions.
+      
+    """
     x=self.counters.axc.value()
     y=self.counters.ayc.value()
     z=self.counters.azc.value()
@@ -105,6 +136,9 @@ class GUI(QtGui.QMainWindow):
 
 
   def updateGUICounters(self):
+    """
+        Actually do the work to update the GUI, not just the internal counters.
+    """
     self.counters.axc.display(self.bmf.counters[0])
     self.counters.ayc.display(self.bmf.counters[1])
     self.counters.azc.display(self.bmf.counters[2])
@@ -143,6 +177,10 @@ class GUI(QtGui.QMainWindow):
     self.__go(0,0,-1)
 
   def __connect(self):
+    """
+       setup up a connection to the BMF peer.
+
+    """
 
     if self.connected:
        return
@@ -165,6 +203,9 @@ class GUI(QtGui.QMainWindow):
     self.connected = True
   
   def __disconnect(self):
+     """
+        disconnect from the BMF peer.
+     """
      if not self.connected:
        return
 
@@ -175,6 +216,18 @@ class GUI(QtGui.QMainWindow):
 
 
   def sendfile(self):
+    """
+       GUI element to send file data to the BMF peer.  This is done using intel hex format binary transfers.
+       each intel hex record is limited 24 bytes long.  The maximum data payload is 16 bytes.
+       frames are padded to the length using ASCII NUL's and a single ASCII LF for the last character.
+
+       if the filename chosen ends in .hex, then the file is read as an ASCII rendition of intel hex format, converted
+       into binary, and sent (assumed to be correctly formatted intel hex.)
+
+       If the file chosen ends with some other suffix, it is read as binary data.  The user is prompted for a start
+       memory location, and then the data is send as chunks in intel-hex format.
+       
+    """
     filename = QtGui.QFileDialog.getOpenFileName(self, 
                   "Find Files", QtCore.QDir.currentPath())
 
@@ -193,6 +246,9 @@ class GUI(QtGui.QMainWindow):
 
 
   def __initKP1(self):
+    """
+        initialize keypad 1.
+    """
 
     self.kp1 = QtGui.QWidget()
     self.kp1.setObjectName("Keypad 1")
@@ -238,6 +294,9 @@ class GUI(QtGui.QMainWindow):
     self.tab.addTab(self.kp1,"Numbers")
 
   def __initKP2(self):
+    """
+        initialize keypad 2.
+    """
 
     self.kp2 = QtGui.QWidget()
     self.kp2.setObjectName("Commands")
@@ -304,6 +363,14 @@ class GUI(QtGui.QMainWindow):
     self.tab.addTab(self.kp2,"Commands")
 
   def __guiupdate(self):
+    """
+      gui refresh routine, called very often, but limits actual refresh frequency.
+      For example, at frequency limit of every 0.1 seconds... on a 1 GHz machine, has about 100 million clocks to 
+      do something useful !
+
+      When it does decide to refresh, it brings the GUI uptodate with all the elements that were updated separately.
+      between gui updates, raw data structures with no gui impact are updated (much more efficient.)
+    """
     
     now=time.time()
     if (now-self.last_update) < 0.1:
@@ -311,9 +378,12 @@ class GUI(QtGui.QMainWindow):
 
     if self.connected:
         if self.bmf.updateReceived:
+           self.log.logUpdate()
            self.updateGUICounters()
            self.charDisplayWindow.update()
            self.bmf.updateReceived = False
+    else:
+        self.log.logUpdate()
  
     self.last_update=time.time()
     self.statusBar().showMessage(self.msg)
@@ -332,6 +402,12 @@ class GUI(QtGui.QMainWindow):
            self.stg.sim.setChecked(False)
 
   def __routineUpdate(self):
+    """
+      time triggerred update.
+          Polls i/o to see of we have received anything to process.
+          trigger a conditional screen update.
+
+    """
 
     # try to avoid updates piling on each other...
     if self.update_in_progress:
@@ -348,6 +424,10 @@ class GUI(QtGui.QMainWindow):
         
 
   def __otherPort(self):
+    """
+        post a dialog to allow the user to use a name not presented in the initial list of ports.
+        the other port is then added to the list, and selected.
+    """
     op, ok = QtGui.QInputDialog.getText(self,"Other Port", "Port Address")
     if ok:
       last = self.stg.portselect.count()    
@@ -356,6 +436,10 @@ class GUI(QtGui.QMainWindow):
     
 
   def __initSerialPortSettings(self):
+    """
+        initialize settings keypad.
+
+    """
     self.stg = QtGui.QWidget()
     self.stg.setObjectName("Settings")
 
@@ -456,6 +540,10 @@ class GUI(QtGui.QMainWindow):
     self.tab.addTab(self.stg,"Settings")
 
   def __initTesting(self):
+    """
+        initialize Testing keypad.
+
+    """
 
     self.tst = QtGui.QWidget()
     self.tst.setObjectName("Testing")
@@ -489,6 +577,9 @@ class GUI(QtGui.QMainWindow):
      self.close()
      
   def __clear(self):
+     """
+        clear the character addressable display.
+     """
      self.charDisplay.clear()
      if self.connected:
         self.bmf.updateReceived=True
@@ -496,6 +587,10 @@ class GUI(QtGui.QMainWindow):
      
 
   def exercise( self ):
+     """
+        test the character addressable display by drawing in random ways.
+
+     """
      self.charDisplay.writeStringXY(0,0, "0123456789012345678901234567890123456789012345678")
      self.charDisplay.writeStringXY(self.exx,self.exy,"Hello")
 
@@ -550,12 +645,9 @@ class GUI(QtGui.QMainWindow):
 
      
      self.mainwin = QtGui.QWidget()
-     #self.mainlayout= QtGui.QGridLayout() 
      self.mainlayout= QtGui.QHBoxLayout() 
 
-     #self.mainlayout.addWidget(self.counters,0,0)
      self.mainlayout.addWidget(self.counters,1)
-     #self.mainlayout.addWidget(self.log,0,1)
      self.mainlayout.addWidget(self.log,5)
 
      self.tab = QtGui.QTabWidget(self.mainwin)
@@ -563,10 +655,8 @@ class GUI(QtGui.QMainWindow):
      self.__initKP1()     
      self.__initSerialPortSettings()     
      self.__initTesting()     
-     #self.mainlayout.addWidget(self.tab,1,0)
      self.mainlayout.addWidget(self.tab,4)
 
-     #self.mainlayout.addWidget(self.charDisplayWindow,1,1)
      self.mainlayout.addWidget(self.charDisplayWindow,8)
 
      self.mainwin.setLayout(self.mainlayout)
@@ -581,4 +671,4 @@ class GUI(QtGui.QMainWindow):
      self.updateTimer.setInterval(50)
      self.updateTimer.start()
      
-     self.__logit("Ready.")
+     self.__logit("Ready")

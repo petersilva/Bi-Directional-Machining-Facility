@@ -8,7 +8,21 @@ named COPYING in the root of the source directory tree.
 """
 
 """
-Operate BMF - le programme pour opérer un BMF. part le GUI
+Operate BMF - wrapper to operate the bi-directional machining facility.
+
+ usually used to fire up a GUI to talk to the BMF over a serial line, that would just be:
+
+      obmf.py
+
+ (default is ´view´ to fire up the GUI, and one can use the settings tab to identify the port.)
+
+      obmf.py --port=localhost:50007 --flags=4 read
+         - start up a line mode interface that will only read commands, in network server mode.
+
+
+      obmf.py --port=localhost:5007 --flasgs=8 view 
+         - start up a gui in net client mode, will connect to above...
+
 
 """
 
