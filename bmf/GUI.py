@@ -340,8 +340,8 @@ class GUI(QtGui.QMainWindow):
 
     if self.connected:
         self.bmf.readpending(self.__guiupdate)
-    else:
-        self.__guiupdate()
+
+    self.__guiupdate()
 
     self.update_in_progress=False
 
