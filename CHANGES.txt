@@ -1,30 +1,55 @@
 TODO:
+ 
+  -- documentation review.
+  -- logging to a text file... 
+        -- portable way (what's a \n on win?))
+        -- good method of logfile name selection.
+        -- log everything...
+        -- maybe z80 will log too?
+  -- eliminate lots of dead code:
+       -- all the 'go' routines.
+       -- self.last_update in GUI (replaced by timed stuff.)
   -- subtract Acks?  Do we need them?
+       -- Acks are not generated, current flag does nothing in app.
   -- add LEDS?
   -- have routine updates make radiobuttons symmetrical.
   -- have toggles stay depressed when appropriiate.
-  -- make protocol symmetrical
-       -- tx register setting.
-       -- tx graphic display
-  -- have programmable length of log window, for now it just fills up memory
-  -- testing ack toggle.
-     -- need to release server to activate client, ok?
+  -- FIXME: reception of intel hex format
+	-- vrfy checksums.
+	-- store them somewhere?
+
 
 unknown/WILL NOT DO:
   -- decimal in counters.
      will not match, because have to convert to decimals, and will not match
      integer counters. 
 
+2010/10/02:
+  -- documentated purpose for many routines in GUI.py.
+  -- added 0x90->0x9f op-codes for counter updates.
+  -- added 0x84 setCounterXY support, new op-code to say where it lives.
+  -- have sub-second timestamps in the log.
+  -- replaced fixed refresh interval with looking at how long refresh takes
+     on the machine, and trying not to return before it has spent at least
+     half it's time on something else.  In this way, it should never lag... 
+  -- made protocol symmetrical
+       -- tx register setting. (one liner!)
+       -- tx graphic display  (one liner!)
+       -- tx register positioning (one liner!)...
+  -- Added the AA - Alcaholics Anonymous op-code...
+     improved self-test rig, by having network server generate test data, so 
+     GUI actually receives and parses display update commands (this code not
+     exercised in previous testing rigs.)
+
 2010/09/25:
   -- speedups:
 	-- optimized some loops. (CharDisplay.repaint...)
 	-- ignore graphical updates < x ms. apart (see GUI.__guiupdate)
         -- started buffering reads
-
-2010/09/25:
   -- added crash and burn to avoid infinite loop at exit of one end of socket.
   -- from: make protocol symmetrical
        -- rx intel hex stream... (bogus, just discards what it rx's)
+  -- log length now fixed at 100.
 
 2010/09/21:
   -- bugfix regressions for intel hex send (binrec)

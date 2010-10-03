@@ -29,6 +29,7 @@ Operate BMF - wrapper to operate the bi-directional machining facility.
 import bmf
 import string
 import time
+import platform
 
 def usage():
   print """
@@ -68,14 +69,13 @@ def print_msg(str):
     last_update=now
     print str
 
+
 def operate_bmf(port=None,cmd="view",speed=38400,dbg=0):
     
     if port != None:
-      b = bmf.bmf(port,speed,dbg,print_msg)
+      b = bmf.bmf(dev=port,speed=speed,flags=dbg,msgcallback=print_msg)
     else:
       b = None
-    
-    
     
     if cmd == 'view':
       from PyQt4 import QtGui
@@ -96,6 +96,8 @@ def operate_bmf(port=None,cmd="view",speed=38400,dbg=0):
     elif cmd == 'read' :
       while True:
           b.readcmd(True)
+    elif cmd == 'test':
+          b.sendTestCommands()
     elif cmd == 'send':
       print "Send Intel Hex file"
       filename = args[1]
@@ -109,9 +111,20 @@ def operate_bmf(port=None,cmd="view",speed=38400,dbg=0):
 
 if __name__ == '__main__':
     #port="COM2:"
-    port=None
-    speed=38400
-    dbg=0
+
+    #FIXME: code for testing purposes...
+    #    hardcoded defaults to make testing go quickly.
+    #    would be nice to replace with a detection scan...
+    #
+    if platform.system() == "Windows":
+        port="COM1"
+        speed=57600
+        dbg=0
+    else:
+        # I test with a socket back to myself now...
+        port='localhost:50007'
+        speed=115200
+        dbg=8
     
     opts, args = getopt.getopt(sys.argv[1:],"f:p:s:V",[ 
     "flags=", "f=", "port=", "speed=", "version" ])

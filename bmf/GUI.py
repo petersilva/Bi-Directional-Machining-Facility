@@ -22,6 +22,10 @@ from . import CharDisplayWindow
 # for exercise
 import random
 
+gui_update_total_time = 0
+gui_update_total_count = 0
+gui_update_next_time = time.time()
+
 
 class GUI(QtGui.QMainWindow):
   """ GUI for the bi-directional machining facility
@@ -38,6 +42,8 @@ class GUI(QtGui.QMainWindow):
        save the given text to the application log, and trigger a conditional ui update.
     """
     self.log.add(text)
+    #self.logfile.write(text +"\n")
+
     if self.connected:
        self.bmf.updateReceived=True
     self.__guiupdate()
@@ -57,8 +63,13 @@ class GUI(QtGui.QMainWindow):
     w.setAutoRepeatDelay(2000)
     w.setAutoRepeatInterval(50)
     self.connect(w, QtCore.SIGNAL('clicked()'), action)
-    if otheraction != None:
-       self.connect(w, QtCore.SIGNAL('clicked()'), otheraction)
+
+    # FIXME:  correct fix is to remove the otheraction argument and all the __go routines.
+    # support for otheraction suppressed, this used for the go routines.
+    #  z80 is to have complete control of counteers, and these routines 
+    #  tend to just update the counters.
+    #if otheraction != None:
+    #   self.connect(w, QtCore.SIGNAL('clicked()'), otheraction)
     return(w)
 
 
@@ -139,12 +150,19 @@ class GUI(QtGui.QMainWindow):
     """
         Actually do the work to update the GUI, not just the internal counters.
     """
+    #if self.connected:
+    #   for i in range(0,0xf):
+    #      if self.bmf.counter_display[i] != None:
+    #          self.bmf.display.writeStringXY( self.bmf.counter_display[i][0], self.bmf.counter_display[i][1],
+    #            "%2d.%03d" % ( self.bmf.counters[i] / 1000 , self.bmf.counters[i] % 1000 ))
+
     self.counters.axc.display(self.bmf.counters[0])
     self.counters.ayc.display(self.bmf.counters[1])
     self.counters.azc.display(self.bmf.counters[2])
     self.counters.rxc.display(self.bmf.counters[3])
     self.counters.ryc.display(self.bmf.counters[4])
     self.counters.rzc.display(self.bmf.counters[5])
+
 
   def __goNW(self):
     self.__go(-1,-1,0)
@@ -371,9 +389,12 @@ class GUI(QtGui.QMainWindow):
       When it does decide to refresh, it brings the GUI uptodate with all the elements that were updated separately.
       between gui updates, raw data structures with no gui impact are updated (much more efficient.)
     """
+    global gui_update_total_time
+    global gui_update_total_count
+    global gui_update_next_time
     
-    now=time.time()
-    if (now-self.last_update) < 0.1:
+    gustart=time.time()
+    if gustart < gui_update_next_time:
         return
 
     if self.connected:
@@ -400,6 +421,23 @@ class GUI(QtGui.QMainWindow):
     if self.stg.netcli.isChecked():
        if self.stg.sim.isChecked() : 
            self.stg.sim.setChecked(False)
+
+    duration=time.time()-gustart
+    gui_update_total_time += (time.time()-gustart)
+    gui_update_total_count+=1
+    gui_update_average=1.0*gui_update_total_time/gui_update_total_count
+
+    # updating > 10 times a second is a waste of time, since human requires order of 150 - 250 ms. to recognize a number
+    # http://en.wikipedia.org/wiki/Mental_chronometry , so set a minimum interval of 100 ms. If computer is too slow,
+    # may require lengthening.  2 comes from saying computer should spend at least half the time doing something else,
+    # like reading the serial port...
+
+    gui_update_next_time += max(0.1,2*gui_update_average)
+    if ( gui_update_total_count % 300 ) == 100:
+       self.__logit("guiupdate: this one took: %f" % duration )
+       self.__logit("guiupdate took: total_time=%f, count=%d, average=%.5f" % \
+              ( gui_update_total_time, gui_update_total_count, gui_update_average ))
+
 
   def __routineUpdate(self):
     """
@@ -488,7 +526,7 @@ class GUI(QtGui.QMainWindow):
     # baud
     self.stg.bpslabel = QtGui.QLabel("&Baud:")
     self.stg.bps = QtGui.QComboBox()
-    speeds=[ "300","900","1200","4800","9600","19200","38400","57600","119200" ]
+    speeds=[ "300","900","1200","4800","9600","19200","38400","57600","115200" ]
     self.stg.bps.addItems(speeds)    
     if (self.bmf != None) and (self.bmf.dev != None):
         self.stg.bps.setCurrentIndex( speeds.index(str(self.bmf.speed)))
@@ -614,7 +652,7 @@ class GUI(QtGui.QMainWindow):
      self.exy=4
 
      self.msg = "almost ready?"
-     self.connected = (bmf != None) 
+     self.connected = (bmf != None)
 
      self.log=LogDisplay.LogWindow(self.__logUI)
      #self.__logit("Startup...")
@@ -624,6 +662,9 @@ class GUI(QtGui.QMainWindow):
 
      self.charDisplay=CharDisplay.CharDisplay(self.__logit) 
      self.charDisplayWindow=CharDisplayWindow.CharDisplayWindow(self.__logit,self.charDisplay)
+
+     if self.connected:
+           self.bmf.display = self.charDisplay
 
      self.counters=CounterDisplay.CounterDisplay(self)
 
@@ -670,5 +711,9 @@ class GUI(QtGui.QMainWindow):
      self.connect(self.updateTimer, QtCore.SIGNAL("timeout()"), self.__routineUpdate )
      self.updateTimer.setInterval(50)
      self.updateTimer.start()
-     
+
+     # hide the counter tab...
+     self.counters.Show() 
+
+     #self.logfile=open("bmf.log","w")
      self.__logit("Ready")

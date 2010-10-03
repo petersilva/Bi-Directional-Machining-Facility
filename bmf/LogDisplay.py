@@ -21,7 +21,7 @@ class LogWindow(QtGui.QDialog):
      self.log_entries[self.log_index] = ( time.time(), msg )
      self.log_index +=1 
      self.updated=True
-     if self.log_index > self.max_entries:
+     if self.log_index >= self.max_entries:
            self.log_index=0
 
      self.post_callback(msg)
@@ -32,14 +32,14 @@ class LogWindow(QtGui.QDialog):
      if self.updated:
         for i in range(0,self.max_entries):
            j=(self.log_index+i) % self.max_entries
-           print "log update, i=%d, j=%d " % (i,j, )
+           #print "log update, i=%d, j=%d " % (i,j, )
            if self.log_entries[j][0] == 0:
              tstring=""
            else:
              tstring= time.strftime("%H:%M:%S", time.localtime(self.log_entries[j][0]) )
              tstring += ".%02d" % int( (self.log_entries[j][0]%1) * 100 )
 
-           print "log update, i=%d, j=%d, tstring=%s, item=%s" % (i,j,tstring, self.log_entries[j][1] )
+           #print "log update, i=%d, j=%d, tstring=%s, item=%s" % (i,j,tstring, self.log_entries[j][1] )
            leTime = self.messageTable.item(i,0)
            leTime.setText( tstring )
            lemsg =  self.messageTable.item(i,1)

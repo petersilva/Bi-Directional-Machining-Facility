@@ -15,6 +15,7 @@ import time
 import socket
 import select
 import sys
+import random
 
 FLAG_WRITE_FILE = 1 # simulation mode. (does writing to a file)
 FLAG_NO_ACK     = 2 # do not wait for acknowledgements (implied by 01)
@@ -47,6 +48,8 @@ TRIGGER_INTERRUPT = 0x0A
 FRAME_TYPE_HEX    = ':'    # ':'
 FRAME_ACK_OK      = '\x00'
  
+
+
 class bmf:
   """
     bidirectional machining facility - python interface to the z80 over 
@@ -65,7 +68,7 @@ class bmf:
     use intel hex format to exchange binary data: https://launchpad.net/intelhex/
   """
 
-  def __init__(self,dev,speed=38400,flags=0,msgcallback=None,display=None):
+  def __init__(self,dev,speed=57600,flags=0,msgcallback=None,display=None):
      """
 
        device = port to open. ("COM2:" or "/dev/ttyUSB0", etc...)
@@ -83,11 +86,14 @@ class bmf:
      self.flags = flags
      self.msgcallback=msgcallback
      self.display=display
+     self.updateReceived=False
 
      self.counters = []
+     self.counter_display = []
      i=0
-     while i < 255:
+     while i < 15:
         self.counters.append(0) 
+        self.counter_display.append(None)
         i+=1
 
      self.read_buffer = ""
@@ -119,7 +125,6 @@ class bmf:
 	this routine hangs the application, until someone connects.
 
      """
-     print 'port is:', self.dev
      host, port = self.dev.split(':')
      host = None
      for res in socket.getaddrinfo(host, int(port), socket.AF_UNSPEC,
@@ -171,9 +176,10 @@ class bmf:
             continue
         break
      if s is None:
-        self.msgcallback( 'could not open socket' )
+        print "failed to open socket."
         sys.exit(1)
 
+      
      self.serial=s
 
 
@@ -262,6 +268,7 @@ class bmf:
         if callback != None:
             callback()
 
+
   def readcmd(self,block=False):
      """
      purpose:
@@ -317,22 +324,21 @@ class bmf:
         #FIXME:  discards data received.
         return 0
 
-     elif cmd == 0x81: # display character string
+     elif (cmd == 0x81): # display character string
         coords = self.__readn(2)
         if (len(coords) < 2):
-	      self.resync()
-	      return
+	    self.resync()
+	    return
+
         s = self.__readline()       
         x = 0x7f & ord(coords[0])
         y = 0x7f & ord(coords[1])
         if (x == 0x7f) and (y == 0x7f):
-           self.display.clear()
-           self.msgcallback( "clear screen" )
+            self.display.clear()
+            self.msgcallback( "clear screen" )
         else:
-           x = 0x7f & ord(coords[0])
-           y = 0x7f & ord(coords[1])
-           self.display.writeStringXY(x,y,s[0:-1])
-           self.msgcallback( "display: %s" % s)
+            self.display.writeStringXY(x,y,s[0:-1])
+
 
         self.updateReceived=True
         return 0 
@@ -340,8 +346,14 @@ class bmf:
         buf=self.__readn(4)
         counter_index = ord(buf[0])
         counter_value  = ord(buf[1])*256+ord(buf[2])
+        #self.msgcallback( "counter[%d]: %d" % (counter_index,counter_value) )
         self.counters[counter_index] = counter_value       
-        self.msgcallback( "counter[%d]: %d" % (counter_index,counter_value) )
+        if self.counter_display[counter_index] != None:
+            self.display.writeStringXY(
+                self.counter_display[counter_index][0],
+                self.counter_display[counter_index][1],
+                "%2d.%03d" % ( counter_value / 1000 , counter_value % 1000 ))
+
         self.updateReceived=True
         if ord(buf[3]) != TRIGGER_INTERRUPT:
            self.msgcallback( 
@@ -364,6 +376,50 @@ class bmf:
             self.msgcallback( "error %d: %s" % 
                        (ord(buf[0]), self.last_command_message ) )
             return ord(buf[0])
+
+     elif cmd == 0x84: # position 16-bit Counter
+        # receipt from sendCounterXY 
+
+        counter_index=ord(self.__readn()) &0x0f
+        coords = self.__readn(2)
+        self.__readline()
+         
+        x = 0x7f & ord(coords[0])
+        y = 0x7f & ord(coords[1])
+
+        if (x == 0x7f) and (y == 0x7f):
+            self.counter_display[counter_index] = None
+            self.msgcallback( "stop counter %d display" % counter_index )
+        else:
+            self.msgcallback( "show counter %d @ %d,%d" % (counter_index,x,y))
+            self.counter_display[counter_index] = ( x, y )
+
+     elif 0x90 <= cmd <= 0x9f:   # per counter update opcodes.
+        # receipt from sendCounterUpdate 
+        buf=self.__readn(3)
+        counter_index = cmd & 0x0f
+        counter_value  = ord(buf[0])*256+ord(buf[1])
+        self.msgcallback( "counter[%d]: %d" % (counter_index,counter_value) )
+        self.counters[counter_index] = counter_value       
+
+        if self.counter_display[counter_index] != None:
+            self.display.writeStringXY(
+                self.counter_display[counter_index][0],
+                self.counter_display[counter_index][1],
+                "%2d.%03d" % ( counter_value / 1000 , counter_value % 1000 ))
+
+        self.updateReceived=True
+
+        if ord(buf[2]) != TRIGGER_INTERRUPT:
+           self.msgcallback( 
+             "malformed counter update. cmd=0x%02x, last char is: 0x%02x " % (cmd,ord(buf[2])) )
+
+     elif cmd == 0xAA:  # TESTING OpCode drunken sailor...Alcaholics anonymous... 
+        self.msgcallback("loop-back self-test: start.")
+        self.__readline()
+        self.sendTestCommands()
+        self.msgcallback("loop-back self-test: end")
+         
      else: # command...
         self.msgcallback( "Received Key: %02x reading rest of line" % cmd)
         s = self.__readline()
@@ -385,6 +441,14 @@ class bmf:
 
      self.last_command_message=message
 
+  def sendStringXY(self,x,y,buf):
+      self.writecmd( "%c%c%c%s\n" % ( 0x81, (x|0x80), (y|0x80), buf ))
+   
+  def sendCounterUpdate(self,i,v):
+      self.writecmd( "%c%c%c\n" % ( chr(0x90|i), chr(v>>8), chr(v&0xff)  ))
+
+  def sendCounterXY(self,i,x,y):
+      self.writecmd( "%c%c%c%c\n" % ( (0x84), i, (x|0x80), (y|0x80) ))
 
   def sendKey(self,str):
      """
@@ -521,14 +585,52 @@ class bmf:
                                ( line_number, byte_count ) )
      f.close()
 
-
+  def TestCharCounters(self):
+     self.counter_display[0] = ( 4, 4 )
+     self.counter_display[1] = ( 4, 5 )
+     self.counter_display[2] = ( 4, 6 )
+     self.counter_display[3] = ( 4, 7 )
+     self.counter_display[4] = ( 4, 8 )
+     self.counter_display[5] = ( 4, 9 )
   
-  def __del__(self):
-     self.serial.close()
+  def sendTestCommands(self):
+     """
+        Pretending to be the other side, send a bunch of commands to demonstrate that it works.
+     """
 
-  def __getattr__(self,name):
-     if name == 'keys':
-       return(keycodes.keys())
+     dstart=time.time()
+
+     self.sendStringXY(0,0, "0123456789012345678901234567890123456789012345678")
+     self.sendStringXY(2,2,"welcome.")
+     self.sendCounterXY(0,4,4)
+     self.sendCounterXY(1,4,5)
+     self.sendCounterXY(2,4,6)
+     
+     for i in range(0,400):
+        self.sendCounterUpdate(0,i)
+        self.sendCounterUpdate(1,i/3)
+        self.sendCounterUpdate(1,i/2)
+
+     self.sendStringXY(2,8,"That took %f s" % (time.time()-dstart))
+
+     rows=20
+     columns=48
+     for i in range(0,1000):
+         self.sendStringXY(
+                random.randint(0,columns-1),
+                random.randint(9,rows-1),
+                   "Hello")
+
+     self.sendStringXY(0,9," "*columns)
+     self.sendStringXY(0,10," "*columns)
+     self.sendStringXY(2,10,"including 1000 hellos took %f s" % (time.time()-dstart))
+     self.sendStringXY(0,11," "*columns)
+
+     
+
+  #def __getattr__(self,name):
+  #   if name == 'keys':
+  #     return(keycodes.keys())
 
 if __name__ == '__main__':
    # FIXME: does this test stuff work anymore?  

@@ -11,12 +11,12 @@ The host is a system running the application based on python and bindings for th
 
 The embedded system in the prototype is a Z80 family processor, with the peer implementation in assembly language for that processor.  The embedded system is therefore referred to as *the Z80*.
 
-The PC runs an application which displays a user interface, sends commands to the Z80, and receives commands as well.  The Z80 sends updates to counters and display on the PC.  The user interface features:
+The PC runs an application which displays a user interface, sends frames to the Z80, and receives frames as well.  The Z80 sends updates to counters and display on the PC.  The user interface features:
    -- Keys arranged on one or more keyboards.
    -- A dialog of counters
    -- A character-based display (using a fixed font, and fixed dimensions) for the z80 to display arbitrary information.
 
-The protocol is peer to peer, with each side able to send commands asynchronously.
+
 
 Protocol has not yet been analyzed.  In general, the PC being more powerful, handles user interaction, and often checks for 
 arrival of new data from the Z80 (without polling), and will post commands from the user as needed.  The Z80, having real-time constraints and limited resources, will check for data when convenient, and post commends when ready.
@@ -34,15 +34,26 @@ In some cases, ASCII names will be used for characters.
 NUL - ASCII NUL character (00)
 LF  - ASCII LF (Line Feed) character (0x0a)
 
+The protocol is peer to peer, with each side able to send commands asynchronously.  frames are structured as follows:
+   <opcode> <arguments> LF
 
-PC to Z80
----------
+opcode is a single byte determining the meaning of the rest of the frame.  LF terminates the frame.
+In some cases, LF may be present in the middle of the frame, but these cases are to be minimized.
 
-For most keys presented on the keyboard, there is an command which is sent by the PC to the Z80.  format of a command frame::
+Opcodes:
+
+For most keys presented on the keyboard, there is an separate opcode which is sent by the PC to the Z80.  
+format of a key frame::
 
   Send:
   <Key> 0A 
         Send the key to the Z80.  Key is a single byte, followed by a line feed.
+
+All of these keys must be < 0x80.
+
+The key 0x0a must be avoided as it triggers end of line.
+
+
 
 Keys defined:
   00 - 09 - 00 to 0-9 (Digits)
@@ -52,23 +63,22 @@ Keys defined:
   .......  Up - Down
      Directional key for z movement control.
 
-  80 - Block Mode
+Other opcodes are:
+
+  3A - Intel hex formated data record 
      Trigger send of data in 8-bit Intel Hex format, blocked by 24 byte frames.
      if frame less than 24 bytes, it is padded with NULs.  a line feed is used for the last pad byte.
      ':' <datacount> <AddrH> <AddrL> <type> <data> <chksum> <padding... >
-           
-     last frame, triggers a return to command mode:
+
+     static last frame, triggers a return to command mode:
      ':' 00 01 ff 00 00 00 ... 
+
+  80 - Block Mode
+     Initiate a block mode transfer.  Data transfer uses intel hex format data records.
+     In this mode, transfers are synchronous.  Sender sends one intel hex record, awaits an acknowledgement.
+     if sender receives negative acknowledgement, sender should resend.
+     FIXME: this is an infinite loop... 
      
-Z80 to PC
----------
-
-  Send:
-     string terminated by LF.
-  response:
-     ?? - should there be acknowledgements?
-
-
   81 - Display characters
       <x>, <y>, <string> LF
       x - single byte column dimension bitwise ored with 0x80
@@ -82,36 +92,49 @@ Z80 to PC
 	- dimensions off screen.
         - non-printable characters in string.
 
-  82 - Set (16-bit) Counter
+
+  82 - General Set (16-bit) Counter
      <Id>,<Hi>,<Lo>,LF
      Id - one byte index of the counter whose value is to be set.
      Hi - most significant byte of counter whose value is to be set.
      Lo - least significant byte of counter whose value is to be set.
 
-  83 - response to last command received
-     <status>, LF - completion status of last command received.
-     00 - OK
-     otherwise, bad.
-     01 - malformed line, resend please
 
-  84 - resync request.
-      not sure about this...
-      read bytes until a correct response is received.
-      response would be to send  FC FB LF for a while, until ...
-      you get       
+  83 - Acknowledge last command received
+     <status>, LF - completion status of last command received.
+
+     00 - OK  -     ack.
+     otherwise, bad. - nack / negative acknowledgement.
+     01 - malformed line, resend please 
+
+     note: unless in block mode, acknowledgements are not required.
+
+
+  84 - Position Counter
+     <idx>,<i>,<j>,LF
+
+     request that character display include the idx counter at the given position. 
+     future counter updates will cause a 6 character string update at that location.
+
+     encoding is similar to write string command.
+
+     i=7f,j=7f -> cancel (stop updating counter value here.)
+ 
+
+  90 -> 9f - update counters 0 through f.
+     <Hi>,<Lo>,LF
+
+
+  AA - Alcaholics Anonymous...
+     drunken sailor mode, peer is to respond with a large number of screen and counter updates,
+     to demonstrate functionality.   
 
 
 Protocol Analysis
 -----------------
 
-Known problems:
-   hardware in use has issues with character 255.  It seems to create corruption when that character 
-is transferred as part of a stream.  Works ok in a command frame.
+now that it is symmetrical, am reassured.
 
-Ambiguity:
-Use of or any fixed code with conflicts with an existing code will cause ambiguity when the code is returned legitimately. example: If z80 sends a command, and PC responds with 00 0a... is that an acknowledgement, or a keypress?
-
-re-synchronization... if we get lost, how do we get back in sync?
-
-not sure the resync stuff works, what if they both lose sync... what should they do?
+re-synchronization... if we get lost, how do we get back in sync?  not sure the resync stuff works, 
+what if they both lose sync... what should they do?
 
