@@ -14,7 +14,7 @@ from PyQt4 import QtCore
 import time
 
 
-class LogWindow(QtGui.QDialog):
+class LogWindow(QtGui.QMainWindow):
 
   def add(self,msg):
 
@@ -58,7 +58,13 @@ class LogWindow(QtGui.QDialog):
      self.updated=False
 
      self.max_entries=max_entries
+
+     self.msgdock = QtGui.QDockWidget("Log",self)
+     self.msgdock.setAllowedAreas(QtCore.Qt.AllDockWidgetAreas )
+
      self.messageTable = QtGui.QTableWidget(1,2,self)
+     self.msgdock.setWidget(self.messageTable)
+
      self.resize(400,400)
      self.messageTable.setHorizontalHeaderLabels(("Time","Message"))
      self.messageTable.horizontalHeader().setResizeMode( 0, QtGui.QHeaderView.Fixed)
@@ -78,9 +84,12 @@ class LogWindow(QtGui.QDialog):
         self.messageTable.setItem(i,1, leMsg)
         
 
-     loglayout= QtGui.QVBoxLayout()
-     loglayout.addWidget(self.messageTable)
-     self.setLayout(loglayout)
+     #loglayout= QtGui.QVBoxLayout()
+     #loglayout.addWidget(self.messageTable)
+     #self.setLayout(loglayout)
+     parent.addDockWidget(QtCore.Qt.LeftDockWidgetArea, self.msgdock)
+     parent.viewMenu.addAction(self.msgdock.toggleViewAction())
+
      
   def minimumSizeHint(self):
      return(QtCore.QSize(200,200))

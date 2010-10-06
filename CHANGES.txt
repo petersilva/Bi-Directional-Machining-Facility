@@ -1,28 +1,45 @@
 TODO:
  
+  -- decimal in counters.
+     will not match, because have to convert to decimals, and will not match
+     integer counters. 
+  -- nth character display...
+       opcode.
+  -- GUI re-work...
+       have Settings as a sub-window that shows up.
+       maybe menup
+       -- Get rid of logWindow
+  -- Manual Data Entry.? Tab?
   -- documentation review.
+  -- Unit Testing?
   -- logging to a text file... 
         -- portable way (what's a \n on win?))
         -- good method of logfile name selection.
         -- log everything...
         -- maybe z80 will log too?
+  -- FIXME: reception of intel hex format - Michel thinking about it...
+	-- vrfy checksums.
+	-- store them to file?
+        -- loopback test, 
+                read data, 
+		write to peer, 
+		have peer send it back, 
+		write it out.
   -- eliminate lots of dead code:
        -- all the 'go' routines.
        -- self.last_update in GUI (replaced by timed stuff.)
+  -- Move go routines to be used by test bot.
   -- subtract Acks?  Do we need them?
        -- Acks are not generated, current flag does nothing in app.
   -- add LEDS?
   -- have routine updates make radiobuttons symmetrical.
   -- have toggles stay depressed when appropriiate.
-  -- FIXME: reception of intel hex format
-	-- vrfy checksums.
-	-- store them somewhere?
 
+DONE: 
+  -- added leading 0´s to character display of counter values.
 
-unknown/WILL NOT DO:
-  -- decimal in counters.
-     will not match, because have to convert to decimals, and will not match
-     integer counters. 
+2010/10/06:
+  -- Docking Widget re-factor.
 
 2010/10/02:
   -- documentated purpose for many routines in GUI.py.

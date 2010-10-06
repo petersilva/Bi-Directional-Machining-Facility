@@ -42,7 +42,7 @@ class GUI(QtGui.QMainWindow):
        save the given text to the application log, and trigger a conditional ui update.
     """
     self.log.add(text)
-    #self.logfile.write(text +"\n")
+    #self.logfile.write(text + "\n")
 
     if self.connected:
        self.bmf.updateReceived=True
@@ -54,7 +54,7 @@ class GUI(QtGui.QMainWindow):
     """
     self.msg = msg
 
-  def __button( self, text, parent, action, otheraction=None ):
+  def __button( self, text, parent, action ):
     """
        define a standard button.
     """
@@ -119,9 +119,9 @@ class GUI(QtGui.QMainWindow):
       move counters 0 through 5 around approproately for a displacement in any and all dimensions.
       
     """
-    x=self.counters.axc.value()
-    y=self.counters.ayc.value()
-    z=self.counters.azc.value()
+    x=self.counters.qw.axc.value()
+    y=self.counters.qw.ayc.value()
+    z=self.counters.qw.azc.value()
     #print "go at: %d,%d,%d" % (x, y, z)
     limit=False
     x+=xoff
@@ -139,9 +139,9 @@ class GUI(QtGui.QMainWindow):
     self.bmf.counters[1] = y
     self.bmf.counters[2] = z
 
-    self.bmf.counters[3] = self.counters.rxc.value()+xoff
-    self.bmf.counters[4] = self.counters.ryc.value()+yoff
-    self.bmf.counters[5] = self.counters.rzc.value()+zoff
+    self.bmf.counters[3] = self.counters.qw.rxc.value()+xoff
+    self.bmf.counters[4] = self.counters.qw.ryc.value()+yoff
+    self.bmf.counters[5] = self.counters.qw.rzc.value()+zoff
 
     self.updateGUICounters()
 
@@ -156,12 +156,12 @@ class GUI(QtGui.QMainWindow):
     #          self.bmf.display.writeStringXY( self.bmf.counter_display[i][0], self.bmf.counter_display[i][1],
     #            "%2d.%03d" % ( self.bmf.counters[i] / 1000 , self.bmf.counters[i] % 1000 ))
 
-    self.counters.axc.display(self.bmf.counters[0])
-    self.counters.ayc.display(self.bmf.counters[1])
-    self.counters.azc.display(self.bmf.counters[2])
-    self.counters.rxc.display(self.bmf.counters[3])
-    self.counters.ryc.display(self.bmf.counters[4])
-    self.counters.rzc.display(self.bmf.counters[5])
+    self.counters.qw.axc.display(self.bmf.counters[0])
+    self.counters.qw.ayc.display(self.bmf.counters[1])
+    self.counters.qw.azc.display(self.bmf.counters[2])
+    self.counters.qw.rxc.display(self.bmf.counters[3])
+    self.counters.qw.ryc.display(self.bmf.counters[4])
+    self.counters.qw.rzc.display(self.bmf.counters[5])
 
 
   def __goNW(self):
@@ -271,6 +271,10 @@ class GUI(QtGui.QMainWindow):
     self.kp1 = QtGui.QWidget()
     self.kp1.setObjectName("Keypad 1")
 
+    self.kp1.dock = QtGui.QDockWidget("Numbers",self)
+    self.kp1.dock.setAllowedAreas( QtCore.Qt.AllDockWidgetAreas )
+    self.kp1.dock.setWidget(self.kp1)
+
     kp1layout=QtGui.QGridLayout(self.kp1)
 
     self.kp1.one = self.__button('1',self.kp1,self.__sendkey)
@@ -309,7 +313,10 @@ class GUI(QtGui.QMainWindow):
     self.kp1.plusminus = self.__button('+/-', self.kp1, self.__sendkey)
     kp1layout.addWidget(self.kp1.plusminus,3,2)
 
-    self.tab.addTab(self.kp1,"Numbers")
+    #self.tab.addTab(self.kp1,"Numbers")
+    self.addDockWidget(QtCore.Qt.BottomDockWidgetArea, self.kp1.dock)
+    self.viewMenu.addAction(self.kp1.dock.toggleViewAction())
+
 
   def __initKP2(self):
     """
@@ -319,66 +326,93 @@ class GUI(QtGui.QMainWindow):
     self.kp2 = QtGui.QWidget()
     self.kp2.setObjectName("Commands")
 
+    self.kp2.dock = QtGui.QDockWidget("Command Keypad",self)
+    self.kp2.dock.setAllowedAreas(QtCore.Qt.AllDockWidgetAreas )
+    self.kp2.dock.setWidget(self.kp2)
+
     kp2layout=QtGui.QGridLayout(self.kp2)
 
-    self.kp2.nw = self.__button('NW', self.kp2, self.__sendkey, self.__goNW)
+    self.kp2.nw = self.__button('NW', self.kp2, self.__sendkey)
     kp2layout.addWidget(self.kp2.nw,0,0)
 
-    self.kp2.up = self.__button('N', self.kp2, self.__sendkey, self.__goN)
+    self.kp2.up = self.__button('N', self.kp2, self.__sendkey)
     kp2layout.addWidget(self.kp2.up,0,1)
 
-    self.kp2.ne = self.__button('NE', self.kp2, self.__sendkey, self.__goNE)
+    self.kp2.ne = self.__button('NE', self.kp2, self.__sendkey)
     kp2layout.addWidget(self.kp2.ne,0,2)
 
-    self.kp2.left = self.__button('W', self.kp2, self.__sendkey, self.__goW)
+    self.kp2.left = self.__button('W', self.kp2, self.__sendkey)
     kp2layout.addWidget(self.kp2.left,1,0)
 
     self.kp2.stop = self.__button('Stop', self.kp2, self.__sendkey )
     kp2layout.addWidget(self.kp2.stop,1,1)
 
-    self.kp2.right = self.__button('E', self.kp2, self.__sendkey, self.__goE)
+    self.kp2.right = self.__button('E', self.kp2, self.__sendkey)
     kp2layout.addWidget(self.kp2.right,1,2)
 
-    self.kp2.sw = self.__button('SW', self.kp2, self.__sendkey, self.__goSW)
+    self.kp2.sw = self.__button('SW', self.kp2, self.__sendkey)
     kp2layout.addWidget(self.kp2.sw,2,0)
 
-    self.kp2.down = self.__button('S', self.kp2, self.__sendkey, self.__goS)
+    self.kp2.down = self.__button('S', self.kp2, self.__sendkey)
     kp2layout.addWidget(self.kp2.down,2,1)
 
-    self.kp2.se = self.__button('SE', self.kp2, self.__sendkey, self.__goSE)
+    self.kp2.se = self.__button('SE', self.kp2, self.__sendkey)
     kp2layout.addWidget(self.kp2.se,2,2)
 
-    self.kp2.plus = self.__button('+', self.kp2, self.__sendkey)
-    kp2layout.addWidget(self.kp2.plus,3,0)
+    #self.tab.addTab(self.kp2,"Commands")
+    self.addDockWidget(QtCore.Qt.BottomDockWidgetArea, self.kp2.dock)
+    self.viewMenu.addAction(self.kp2.dock.toggleViewAction())
 
-    self.kp2.speed = self.__button('Speed', self.kp2, self.__sendkey)
-    kp2layout.addWidget(self.kp2.speed,3,1)
 
-    self.kp2.minus = self.__button('-', self.kp2, self.__sendkey)
-    kp2layout.addWidget(self.kp2.minus,3,2)
 
-    self.kp2.hilo = self.__button('Hi/Lo', self.kp2, self.__sendToggleKey)
-    kp2layout.addWidget(self.kp2.hilo,4,0)
+  def __initKP3(self):
+    """
+        initialize keypad 3.
+    """
 
-    self.kp2.origin = self.__button('Origin', self.kp2, self.__sendkey)
-    kp2layout.addWidget(self.kp2.origin,4,1)
+    self.kp3 = QtGui.QWidget()
+    self.kp3.setObjectName("Other Com")
 
-    self.kp2.send = self.__button('Send', self.kp2, self.sendfile)
-    kp2layout.addWidget(self.kp2.send,4,2)
+    self.kp3.dock = QtGui.QDockWidget("Keypad 3",self)
+    self.kp3.dock.setAllowedAreas(QtCore.Qt.AllDockWidgetAreas )
+    self.kp3.dock.setWidget(self.kp3)
 
-    self.kp2.ss = self.__button('Start/Stop', self.kp2, self.__sendToggleKey)
-    kp2layout.addWidget(self.kp2.ss,5,0)
+    kp2layout=QtGui.QGridLayout(self.kp3)
 
-    self.kp2.cd = self.__button('Up', self.kp2, self.__sendkey, self.__goUp)
-    kp2layout.addWidget(self.kp2.cd,6,0)
 
-    self.kp2.cd = self.__button('Down', self.kp2, self.__sendkey, self.__goDown)
-    kp2layout.addWidget(self.kp2.cd,6,1)
+    self.kp3.plus = self.__button('+', self.kp3, self.__sendkey)
+    kp2layout.addWidget(self.kp3.plus,0,0)
 
-    self.kp2.cd = self.__button('Mark', self.kp2, self.__mark)
-    kp2layout.addWidget(self.kp2.cd,6,2)
+    self.kp3.speed = self.__button('Speed', self.kp3, self.__sendkey)
+    kp2layout.addWidget(self.kp3.speed,0,1)
 
-    self.tab.addTab(self.kp2,"Commands")
+    self.kp3.minus = self.__button('-', self.kp3, self.__sendkey)
+    kp2layout.addWidget(self.kp3.minus,0,2)
+
+    self.kp3.hilo = self.__button('Hi/Lo', self.kp3, self.__sendToggleKey)
+    kp2layout.addWidget(self.kp3.hilo,1,0)
+
+    self.kp3.origin = self.__button('Origin', self.kp3, self.__sendkey)
+    kp2layout.addWidget(self.kp3.origin,1,1)
+
+    self.kp3.send = self.__button('Send', self.kp3, self.sendfile)
+    kp2layout.addWidget(self.kp3.send,1,2)
+
+    self.kp3.ss = self.__button('Start/Stop', self.kp3, self.__sendToggleKey)
+    kp2layout.addWidget(self.kp3.ss,2,0)
+
+    self.kp3.cd = self.__button('Up', self.kp3, self.__sendkey)
+    kp2layout.addWidget(self.kp3.cd,2,0)
+
+    self.kp3.cd = self.__button('Down', self.kp3, self.__sendkey)
+    kp2layout.addWidget(self.kp3.cd,2,1)
+
+    self.kp3.cd = self.__button('Mark', self.kp3, self.__mark)
+    kp2layout.addWidget(self.kp3.cd,2,2)
+
+    #self.tab.addTab(self.kp3,"Commands")
+    self.addDockWidget(QtCore.Qt.BottomDockWidgetArea, self.kp3.dock)
+    self.viewMenu.addAction(self.kp3.dock.toggleViewAction())
 
   def __guiupdate(self):
     """
@@ -481,6 +515,10 @@ class GUI(QtGui.QMainWindow):
     self.stg = QtGui.QWidget()
     self.stg.setObjectName("Settings")
 
+    self.stg.dock = QtGui.QDockWidget("Settings",self)
+    self.stg.dock.setAllowedAreas( QtCore.Qt.AllDockWidgetAreas )
+    self.stg.dock.setWidget(self.stg)
+
     stglayout=QtGui.QGridLayout(self.stg)
     #stglayout.setColumnStretch(0,19)
     #stglayout.setColumnStretch(1,1)
@@ -538,21 +576,18 @@ class GUI(QtGui.QMainWindow):
     stglayout.addWidget(self.stg.bps,1,2,1,3)
 
     # Flags
-    self.stg.flaglabel = QtGui.QLabel("Flags:")
-    stglayout.addWidget(self.stg.flaglabel,2,0)
-
     self.stg.sim = QtGui.QRadioButton('write file', self.stg)
     self.stg.sim.setAutoExclusive(False)
-    stglayout.addWidget(self.stg.sim,3,0,1,2)
+    stglayout.addWidget(self.stg.sim,2,0)
     self.stg.noack = QtGui.QRadioButton('No Ack', self.stg)
     self.stg.noack.setAutoExclusive(False)
-    stglayout.addWidget(self.stg.noack,3,3,1,2)
+    stglayout.addWidget(self.stg.noack,2,1)
     self.stg.netsrv = QtGui.QRadioButton('Net Server', self.stg)
     self.stg.netsrv.setAutoExclusive(False)
-    stglayout.addWidget(self.stg.netsrv,4,0,1,2)
+    stglayout.addWidget(self.stg.netsrv,2,2)
     self.stg.netcli = QtGui.QRadioButton('Net Client', self.stg)
     self.stg.netcli.setAutoExclusive(False)
-    stglayout.addWidget(self.stg.netcli,4,3,1,2)
+    stglayout.addWidget(self.stg.netcli,2,3)
 
     self.stg.connect = self.__button('Connect', self.stg, self.__connect)
     stglayout.addWidget(self.stg.connect,5,0,1,2)
@@ -566,16 +601,19 @@ class GUI(QtGui.QMainWindow):
     stglayout.addWidget(self.stg.showlabel,6,0)
 
     self.stg.log = self.__button('Log', self.stg, self.log.Show)
-    stglayout.addWidget(self.stg.log,7,0,1,1)
+    stglayout.addWidget(self.stg.log,6,1,1,1)
 
     self.stg.dsp = self.__button('Display', self.stg, self.charDisplayWindow.Show)
-    stglayout.addWidget(self.stg.dsp,7,1,1,2)
+    stglayout.addWidget(self.stg.dsp,6,2,1,2)
 
     self.stg.cnt = self.__button('Counters', self.stg, self.counters.Show)
-    stglayout.addWidget(self.stg.cnt,7,3,1,2)
+    stglayout.addWidget(self.stg.cnt,6,4,1,2)
 
 
-    self.tab.addTab(self.stg,"Settings")
+    #self.tab.addTab(self.stg,"Settings")
+    self.addDockWidget(QtCore.Qt.LeftDockWidgetArea, self.stg.dock)
+    self.viewMenu.addAction(self.stg.dock.toggleViewAction())
+    self.stg.dock.toggleViewAction()
 
   def __initTesting(self):
     """
@@ -585,6 +623,10 @@ class GUI(QtGui.QMainWindow):
 
     self.tst = QtGui.QWidget()
     self.tst.setObjectName("Testing")
+
+    self.tst.dock = QtGui.QDockWidget("Testing",self)
+    self.tst.dock.setAllowedAreas( QtCore.Qt.AllDockWidgetAreas )
+    self.tst.dock.setWidget(self.tst)
 
     tstlayout=QtGui.QGridLayout(self.tst)
 
@@ -603,7 +645,9 @@ class GUI(QtGui.QMainWindow):
     self.tst.dc = self.__button('Clear', self.tst, self.__clear)
     tstlayout.addWidget(self.tst.dc,2,1)
 
-    self.tab.addTab(self.tst,"Testing")
+    #self.tab.addTab(self.tst,"Testing")
+    self.addDockWidget(QtCore.Qt.LeftDockWidgetArea, self.tst.dock)
+    self.viewMenu.addAction(self.tst.dock.toggleViewAction())
 
 
 
@@ -612,6 +656,7 @@ class GUI(QtGui.QMainWindow):
      self.__disconnect()
      self.log.close()
      self.counters.close()
+     #self.logfile.close()
      self.close()
      
   def __clear(self):
@@ -647,14 +692,26 @@ class GUI(QtGui.QMainWindow):
   def __init__(self, bmf=None, parent=None):
 
      QtGui.QMainWindow.__init__(self)
-  
+ 
      self.exx=4
      self.exy=4
 
      self.msg = "almost ready?"
      self.connected = (bmf != None)
 
-     self.log=LogDisplay.LogWindow(self.__logUI)
+     exit = QtGui.QAction(QtGui.QIcon('icons/exit.png'), 'Exit', self)
+
+     self.menubar = self.menuBar()
+     file = self.menubar.addMenu('&File')
+     file.addAction(exit)
+
+     self.EditMenu = self.menubar.addMenu("&Edit")
+     self.viewMenu = self.menubar.addMenu("&View")
+
+     self.menuBar().addSeparator()
+     help = self.menubar.addMenu('&Help')
+     
+     self.log=LogDisplay.LogWindow(self.__logUI,self)
      #self.__logit("Startup...")
 
      self.bmf=bmf
@@ -672,38 +729,24 @@ class GUI(QtGui.QMainWindow):
      self.setSizePolicy( QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Expanding )
 
      self.setWindowTitle('BMF - Panel')
-     exit = QtGui.QAction(QtGui.QIcon('icons/exit.png'), 'Exit', self)
      exit.setShortcut('Ctrl+Q')
      exit.setStatusTip('Exit application')
-     #self.connect(exit, QtCore.SIGNAL('triggered()'), QtCore.SLOT('close()'))
      self.connect(exit, QtCore.SIGNAL('triggered()'), self.__exit)
 
-     menubar = self.menuBar()
-     file = menubar.addMenu('&File')
-     file.addAction(exit)
-
-     help = menubar.addMenu('&Help')
-
-     
      self.mainwin = QtGui.QWidget()
      self.mainlayout= QtGui.QHBoxLayout() 
 
      self.mainlayout.addWidget(self.counters,1)
      self.mainlayout.addWidget(self.log,5)
 
-     self.tab = QtGui.QTabWidget(self.mainwin)
+     self.__initKP3()     
      self.__initKP2()     
      self.__initKP1()     
      self.__initSerialPortSettings()     
      self.__initTesting()     
-     self.mainlayout.addWidget(self.tab,4)
-
-     self.mainlayout.addWidget(self.charDisplayWindow,8)
-
-     self.mainwin.setLayout(self.mainlayout)
    
-     self.show()
-     self.setCentralWidget(self.mainwin)
+     #self.show()
+     self.setCentralWidget(self.charDisplayWindow)
 
      self.last_update=time.time()
      self.update_in_progress=False
@@ -711,9 +754,6 @@ class GUI(QtGui.QMainWindow):
      self.connect(self.updateTimer, QtCore.SIGNAL("timeout()"), self.__routineUpdate )
      self.updateTimer.setInterval(50)
      self.updateTimer.start()
-
-     # hide the counter tab...
-     self.counters.Show() 
 
      #self.logfile=open("bmf.log","w")
      self.__logit("Ready")

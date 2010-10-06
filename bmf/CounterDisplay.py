@@ -12,7 +12,7 @@ from PyQt4 import QtGui
 from PyQt4 import QtCore
 
 
-class CounterDisplay(QtGui.QDialog):
+class CounterDisplay(QtGui.QMainWindow):
   """
      provides a GUI pane with counters, currently absolute x,y,z and relative x,y,z
 
@@ -21,45 +21,54 @@ class CounterDisplay(QtGui.QDialog):
   def __init__(self,parent=None):
      super(CounterDisplay, self).__init__(parent)
 
+     dock = QtGui.QDockWidget( "Counters", self)
+     dock.setAllowedAreas( QtCore.Qt.AllDockWidgetAreas )
+     #dock.setWidget(cdl)
      cdl = QtGui.QGridLayout()
+     self.qw = QtGui.QWidget(self)
+     dock.setWidget(self.qw)
 
-     self.al = QtGui.QLabel("Absolute")
-     self.axc = QtGui.QLCDNumber(5,self)
-     self.ayc = QtGui.QLCDNumber(5,self)
-     self.azc = QtGui.QLCDNumber(5,self)
-     self.rl = QtGui.QLabel("Relative")
-     self.rxc = QtGui.QLCDNumber(5,self)
-     self.ryc = QtGui.QLCDNumber(5,self)
-     self.rzc = QtGui.QLCDNumber(5,self)
-     self.axcl = QtGui.QLabel("X",self)
-     self.aycl = QtGui.QLabel("Y",self)
-     self.azcl = QtGui.QLabel("Z",self)
-     self.rxcl = QtGui.QLabel("X",self)
-     self.rycl = QtGui.QLabel("Y",self)
-     self.rzcl = QtGui.QLabel("Z",self)
+     self.qw.al = QtGui.QLabel("Position")
+     self.qw.axc = QtGui.QLCDNumber(5,self.qw)
+     self.qw.ayc = QtGui.QLCDNumber(5,self.qw)
+     self.qw.azc = QtGui.QLCDNumber(5,self.qw)
+     self.qw.rl = QtGui.QLabel("Compteur")
+     self.qw.rxc = QtGui.QLCDNumber(5,self.qw)
+     self.qw.ryc = QtGui.QLCDNumber(5,self.qw)
+     self.qw.rzc = QtGui.QLCDNumber(5,self.qw)
+     self.qw.axcl = QtGui.QLabel("X",self.qw)
+     self.qw.aycl = QtGui.QLabel("Y",self.qw)
+     self.qw.azcl = QtGui.QLabel("Z",self.qw)
+     self.qw.rxcl = QtGui.QLabel("X",self.qw)
+     self.qw.rycl = QtGui.QLabel("Y",self.qw)
+     self.qw.rzcl = QtGui.QLabel("Z",self.qw)
      
-     cdl.addWidget(   self.al, 0, 0, 1, 2 )
-     cdl.addWidget( self.axcl, 1, 0 )
-     cdl.addWidget(  self.axc, 1, 1 )
-     cdl.addWidget( self.aycl, 2, 0 )
-     cdl.addWidget(  self.ayc, 2, 1 )
-     cdl.addWidget( self.azcl, 3, 0 )
-     cdl.addWidget(  self.azc, 3, 1 )
-     cdl.addWidget(   self.rl, 0, 2, 1, 2 )
-     cdl.addWidget( self.rxcl, 1, 2 )
-     cdl.addWidget(  self.rxc, 1, 3 )
-     cdl.addWidget( self.rycl, 2, 2 )
-     cdl.addWidget(  self.ryc, 2, 3 )
-     cdl.addWidget( self.rzcl, 3, 2 )
-     cdl.addWidget(  self.rzc, 3, 3 )
-     self.setLayout(cdl)
-     self.axc.display(0)
-     self.ayc.display(0)
-     self.azc.display(0)
-     self.rxc.display(0)
-     self.ryc.display(0)
-     self.rzc.display(0)
+     cdl.addWidget(   self.qw.al, 0, 0, 1, 2 )
+     cdl.addWidget( self.qw.axcl, 1, 0 )
+     cdl.addWidget(  self.qw.axc, 1, 1 )
+     cdl.addWidget( self.qw.aycl, 2, 0 )
+     cdl.addWidget(  self.qw.ayc, 2, 1 )
+     cdl.addWidget( self.qw.azcl, 3, 0 )
+     cdl.addWidget(  self.qw.azc, 3, 1 )
+     cdl.addWidget(   self.qw.rl, 0, 2, 1, 2 )
+     cdl.addWidget( self.qw.rxcl, 1, 2 )
+     cdl.addWidget(  self.qw.rxc, 1, 3 )
+     cdl.addWidget( self.qw.rycl, 2, 2 )
+     cdl.addWidget(  self.qw.ryc, 2, 3 )
+     cdl.addWidget( self.qw.rzcl, 3, 2 )
+     cdl.addWidget(  self.qw.rzc, 3, 3 )
+     self.qw.setLayout(cdl)
+     self.qw.axc.display(0)
+     self.qw.ayc.display(0)
+     self.qw.azc.display(0)
+     self.qw.rxc.display(0)
+     self.qw.ryc.display(0)
+     self.qw.rzc.display(0)
      self.showing_window=1
+     parent.addDockWidget(QtCore.Qt.LeftDockWidgetArea, dock)
+     parent.viewMenu.addAction(dock.toggleViewAction())
+
+
      
   def Show(self):
      if self.showing_window:

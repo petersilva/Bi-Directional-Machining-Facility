@@ -93,7 +93,7 @@ Other opcodes are:
         - non-printable characters in string.
 
 
-  82 - General Set (16-bit) Counter
+  82 - General Set (16-bit) Counter - OBSOLETE - FIXME.
      <Id>,<Hi>,<Lo>,LF
      Id - one byte index of the counter whose value is to be set.
      Hi - most significant byte of counter whose value is to be set.

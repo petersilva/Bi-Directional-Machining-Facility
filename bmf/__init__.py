@@ -352,7 +352,7 @@ class bmf:
             self.display.writeStringXY(
                 self.counter_display[counter_index][0],
                 self.counter_display[counter_index][1],
-                "%2d.%03d" % ( counter_value / 1000 , counter_value % 1000 ))
+                "%02d.%03d" % ( counter_value / 1000 , counter_value % 1000 ))
 
         self.updateReceived=True
         if ord(buf[3]) != TRIGGER_INTERRUPT:
@@ -406,7 +406,7 @@ class bmf:
             self.display.writeStringXY(
                 self.counter_display[counter_index][0],
                 self.counter_display[counter_index][1],
-                "%2d.%03d" % ( counter_value / 1000 , counter_value % 1000 ))
+                "%02d.%03d" % ( counter_value / 1000 , counter_value % 1000 ))
 
         self.updateReceived=True
 
@@ -442,12 +442,24 @@ class bmf:
      self.last_command_message=message
 
   def sendStringXY(self,x,y,buf):
+      """
+         send a frame to display a string on the peer´s character display.
+         (part of pseudo-Z80 emulation for testing only)
+      """
       self.writecmd( "%c%c%c%s\n" % ( 0x81, (x|0x80), (y|0x80), buf ))
    
   def sendCounterUpdate(self,i,v):
+      """
+         send a frame to initiate a counter update on the peer.
+         (part of pseudo-Z80 emulation for testing only)
+      """
       self.writecmd( "%c%c%c\n" % ( chr(0x90|i), chr(v>>8), chr(v&0xff)  ))
 
   def sendCounterXY(self,i,x,y):
+      """
+         Send a frame to position a counter on the peer´s character display.
+         (part of pseudo-Z80 emulation for testing only)
+      """
       self.writecmd( "%c%c%c%c\n" % ( (0x84), i, (x|0x80), (y|0x80) ))
 
   def sendKey(self,str):
