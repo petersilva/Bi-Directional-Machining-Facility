@@ -60,8 +60,8 @@ class GUI(QtGui.QMainWindow):
     """
     w = QtGui.QPushButton(text, parent)
     w.setAutoRepeat(True)
-    w.setAutoRepeatDelay(2000)
-    w.setAutoRepeatInterval(50)
+    #w.setAutoRepeatDelay(2000)
+    w.setAutoRepeatInterval(5)
     self.connect(w, QtCore.SIGNAL('clicked()'), action)
 
     return(w)
@@ -100,13 +100,6 @@ class GUI(QtGui.QMainWindow):
     kk= QtCore.QObject.sender(self)
     self.__logit( "%s toggle flipped" % kk.text() )
     self.bmf.sendKey(str(kk.text()))
-
-  def __mark(self):
-
-    self.bmf.counters[3] = 0
-    self.bmf.counters[4] = 0
-    self.bmf.counters[5] = 0
-    
 
   def updateGUICounters(self):
     """
@@ -339,7 +332,7 @@ class GUI(QtGui.QMainWindow):
     self.kp3.cd = self.__button( u'\u21e9', self.kp3, self.__sendkey)
     kp2layout.addWidget(self.kp3.cd,2,1)
 
-    self.kp3.cd = self.__button('Mark', self.kp3, self.__mark)
+    self.kp3.cd = self.__button('Mark', self.kp3, self.__sendkey)
     kp2layout.addWidget(self.kp3.cd,2,2)
 
     #self.tab.addTab(self.kp3,"Commands")
@@ -700,12 +693,12 @@ class GUI(QtGui.QMainWindow):
      self.mainlayout.addWidget(self.counters,1)
      self.mainlayout.addWidget(self.log,5)
 
+     self.__initLEDS()     
      self.__initKP3()     
      self.__initKP2()     
      self.__initKP1()     
      self.__initSerialPortSettings()     
      self.__initTesting()     
-     self.__initLEDS()     
    
      #self.show()
      self.setCentralWidget(self.charDisplayWindow)

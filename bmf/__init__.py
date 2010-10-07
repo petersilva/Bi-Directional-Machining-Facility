@@ -41,7 +41,7 @@ keycodes = {
      'FF': 255, u'\u21e7': 63, u'\u21e9': 64,       # FF, Up, Down
      # commands...
      'Status': 83,  'Reset': 82,             # S,R
-     'Block' : 0x80,  'Hello': 72,             # B,H  
+     'Block' : 0x80,  'Mark': 72,             # B,H  
 }
 
 TRIGGER_INTERRUPT = 0x0A
@@ -346,7 +346,6 @@ class bmf:
         buf=self.__readn(4)
         counter_index = ord(buf[0])
         counter_value  = ord(buf[1])*256+ord(buf[2])
-        #self.msgcallback( "counter[%d]: %d" % (counter_index,counter_value) )
         self.counters[counter_index] = counter_value       
         if self.counter_display[counter_index] != None:
             self.display.writeStringXY(
@@ -399,7 +398,7 @@ class bmf:
         buf=self.__readn(3)
         counter_index = cmd & 0x0f
         counter_value  = ord(buf[0])*256+ord(buf[1])
-        self.msgcallback( "counter[%d]: %d" % (counter_index,counter_value) )
+        #self.msgcallback( "counter[%d]: %d" % (counter_index,counter_value) )
         self.counters[counter_index] = counter_value       
 
         if self.counter_display[counter_index] != None:
@@ -429,6 +428,8 @@ class bmf:
         self.__go(-1,1,0)
      elif cmd ==97: # 'W'
         self.__go(-1,0,0)
+     elif cmd == 72:
+        self.__mark()
      elif cmd ==100: #  'E'
         self.__go(1,0,0)
      elif cmd ==122: # 'SW' 
@@ -463,7 +464,7 @@ class bmf:
   def __go(self,xoff,yoff,zoff):
     """
       Z80 emulation bit...
-      move counters 0 through 5 around approproately for a displacement in any and all dimensions.
+      move counters 0 through 5 around appropriately for a displacement in any and all dimensions.
       adjusts counters and sends them to the peer.
  
     """
@@ -474,6 +475,8 @@ class bmf:
          else:
             self.counters[0]=newval
             self.sendCounterUpdate(0,newval)
+            self.counters[3]+=xoff
+            self.sendCounterUpdate(3,self.counters[3])
 
     if yoff != 0:
          newval=self.counters[1]+yoff
@@ -482,6 +485,8 @@ class bmf:
          else:
             self.counters[1]=newval
             self.sendCounterUpdate(1,newval)
+            self.counters[4]+=yoff
+            self.sendCounterUpdate(4,self.counters[4])
 
     if zoff != 0:
          newval=self.counters[2]+zoff
@@ -490,7 +495,17 @@ class bmf:
          else:
             self.counters[2]=newval
             self.sendCounterUpdate(2,newval)
+            self.counters[5]+=zoff
+            self.sendCounterUpdate(5,self.counters[5])
 
+  def __mark(self):
+
+      self.counters[3]=0
+      self.sendCounterUpdate(3,self.counters[3])
+      self.counters[4]=0
+      self.sendCounterUpdate(4,self.counters[4])
+      self.counters[5]=0
+      self.sendCounterUpdate(5,self.counters[5])
 
 
   def sendStringXY(self,x,y,buf):
@@ -519,7 +534,7 @@ class bmf:
         send a key to the peer.
      """
      key=keycodes[str]
-     self.msgcallback( "%02x sent for key: +%s+" % ( key, str ) )
+     #self.msgcallback( "%02x sent for key: +%s+" % ( key, str ) )
      self.writecmd(
           "%c%c" % ( key, TRIGGER_INTERRUPT ),
            "error on send of key: %s" % str

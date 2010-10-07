@@ -1,14 +1,15 @@
 TODO:
  
+  -- make leds work?
+        -- should clicking cause an action?
+        -- status update via flags?
+        -- label set via op-code?
+
   -- decimal in counters.
      will not match, because have to convert to decimals, and will not match
      integer counters. 
   -- nth character display...
        opcode.
-  -- GUI re-work...
-       have Settings as a sub-window that shows up.
-       maybe menup
-       -- Get rid of logWindow
   -- Manual Data Entry.? Tab?
   -- documentation review.
   -- Unit Testing?
@@ -25,22 +26,24 @@ TODO:
 		write to peer, 
 		have peer send it back, 
 		write it out.
-  -- eliminate lots of dead code:
-       -- self.last_update in GUI (replaced by timed stuff.)
   -- subtract Acks?  Do we need them?
        -- Acks are not generated, current flag does nothing in app.
-  -- add LEDS?
   -- have routine updates make radiobuttons symmetrical.
   -- have toggles stay depressed when appropriiate.
 
 DONE: 
+  -- made keyboard faster: eliminate long autorepeat delay, shorten interval 10x to 5 ms.
+  -- add LEDS (visual only for now...)
+  -- changed text buttons to arrows.
   -- go routines removed from GUI, and a single go routine in __init__.py
   -- go routine now returns a counter update to BMF peer (emulation function.)
   -- go routines now called on receipt of key stroke.
-  -- added leading 0´s to character display of counter values.
   -- eliminated last_update
+  -- eliminate lots of dead code:
+       -- self.last_update in GUI (replaced by timed stuff.)
 
 2010/10/06:
+  -- added leading 0´s to character display of counter values.
   -- Docking Widget re-factor.
 
 2010/10/02:
