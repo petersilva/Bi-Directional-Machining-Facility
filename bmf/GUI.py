@@ -72,8 +72,8 @@ class GUI(QtGui.QMainWindow):
        send a key stroke event to the peer. 
     """
     kk= QtCore.QObject.sender(self)
+    self.bmf.sendKey(unicode(kk.text()))
     self.__logit( "%s key sent" % kk.text() )
-    self.bmf.sendKey(str(kk.text()))
 
   def __sendhex(self):
     """
@@ -264,31 +264,31 @@ class GUI(QtGui.QMainWindow):
 
     kp2layout=QtGui.QGridLayout(self.kp2)
 
-    self.kp2.nw = self.__button('NW', self.kp2, self.__sendkey)
+    self.kp2.nw = self.__button(u'\u2196', self.kp2, self.__sendkey)
     kp2layout.addWidget(self.kp2.nw,0,0)
 
-    self.kp2.up = self.__button('N', self.kp2, self.__sendkey)
+    self.kp2.up = self.__button(u'\u2191', self.kp2, self.__sendkey)
     kp2layout.addWidget(self.kp2.up,0,1)
 
-    self.kp2.ne = self.__button('NE', self.kp2, self.__sendkey)
+    self.kp2.ne = self.__button(u'\u2197', self.kp2, self.__sendkey)
     kp2layout.addWidget(self.kp2.ne,0,2)
 
-    self.kp2.left = self.__button('W', self.kp2, self.__sendkey)
+    self.kp2.left = self.__button(u'\u2190', self.kp2, self.__sendkey)
     kp2layout.addWidget(self.kp2.left,1,0)
 
     self.kp2.stop = self.__button('Stop', self.kp2, self.__sendkey )
     kp2layout.addWidget(self.kp2.stop,1,1)
 
-    self.kp2.right = self.__button('E', self.kp2, self.__sendkey)
+    self.kp2.right = self.__button(u'\u2192', self.kp2, self.__sendkey)
     kp2layout.addWidget(self.kp2.right,1,2)
 
-    self.kp2.sw = self.__button('SW', self.kp2, self.__sendkey)
+    self.kp2.sw = self.__button(u'\u2199', self.kp2, self.__sendkey)
     kp2layout.addWidget(self.kp2.sw,2,0)
 
-    self.kp2.down = self.__button('S', self.kp2, self.__sendkey)
+    self.kp2.down = self.__button(u'\u2193', self.kp2, self.__sendkey)
     kp2layout.addWidget(self.kp2.down,2,1)
 
-    self.kp2.se = self.__button('SE', self.kp2, self.__sendkey)
+    self.kp2.se = self.__button(u'\u2198', self.kp2, self.__sendkey)
     kp2layout.addWidget(self.kp2.se,2,2)
 
     #self.tab.addTab(self.kp2,"Commands")
@@ -333,10 +333,10 @@ class GUI(QtGui.QMainWindow):
     self.kp3.ss = self.__button('Start/Stop', self.kp3, self.__sendToggleKey)
     kp2layout.addWidget(self.kp3.ss,2,0)
 
-    self.kp3.cd = self.__button('Up', self.kp3, self.__sendkey)
+    self.kp3.cd = self.__button( u'\u21e7', self.kp3, self.__sendkey)
     kp2layout.addWidget(self.kp3.cd,2,0)
 
-    self.kp3.cd = self.__button('Down', self.kp3, self.__sendkey)
+    self.kp3.cd = self.__button( u'\u21e9', self.kp3, self.__sendkey)
     kp2layout.addWidget(self.kp3.cd,2,1)
 
     self.kp3.cd = self.__button('Mark', self.kp3, self.__mark)
@@ -546,6 +546,36 @@ class GUI(QtGui.QMainWindow):
     self.viewMenu.addAction(self.stg.dock.toggleViewAction())
     self.stg.dock.hide()
 
+  def __initLEDS(self):
+
+    self.leds = QtGui.QWidget()
+    self.leds.setObjectName("LEDS")
+
+    self.leds.dock = QtGui.QDockWidget("LEDS",self)
+    self.leds.dock.setAllowedAreas( QtCore.Qt.AllDockWidgetAreas )
+    self.leds.dock.setWidget(self.leds)
+
+    ledlayout=QtGui.QVBoxLayout(self.leds)
+
+    self.leds.led = []
+    self.leds.led.append(QtGui.QRadioButton('Home XY', self.leds))
+    self.leds.led[0].setAutoExclusive(False)
+    ledlayout.addWidget(self.leds.led[0])
+    self.leds.led.append(QtGui.QRadioButton('Step On', self.leds))
+    self.leds.led[1].setAutoExclusive(False)
+    ledlayout.addWidget(self.leds.led[1])
+    self.leds.led.append( QtGui.QRadioButton('Coolant', self.leds) )
+    self.leds.led[2].setAutoExclusive(False)
+    ledlayout.addWidget(self.leds.led[2])
+    self.leds.led.append( QtGui.QRadioButton('Full Time', self.leds) )
+    self.leds.led[3].setAutoExclusive(False)
+    ledlayout.addWidget(self.leds.led[3])
+
+
+    self.addDockWidget(QtCore.Qt.BottomDockWidgetArea, self.leds.dock)
+    self.viewMenu.addAction(self.leds.dock.toggleViewAction())
+
+
   def __initTesting(self):
     """
         initialize Testing keypad.
@@ -675,6 +705,7 @@ class GUI(QtGui.QMainWindow):
      self.__initKP1()     
      self.__initSerialPortSettings()     
      self.__initTesting()     
+     self.__initLEDS()     
    
      #self.show()
      self.setCentralWidget(self.charDisplayWindow)
