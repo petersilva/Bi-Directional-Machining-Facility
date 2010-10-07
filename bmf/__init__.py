@@ -419,14 +419,33 @@ class bmf:
         self.__readline()
         self.sendTestCommands()
         self.msgcallback("loop-back self-test: end")
-         
+
+     # Simulation of Z80, return movement keys with counter updates.
+     elif cmd ==113: # 'NW' 
+        self.__go(-1,-1,0)
+     elif cmd ==119: # 'N' 
+        self.__go(0,-1,0)
+     elif cmd ==101: #      'NE'
+        self.__go(-1,1,0)
+     elif cmd ==97: # 'W'
+        self.__go(-1,0,0)
+     elif cmd ==100: #  'E'
+        self.__go(1,0,0)
+     elif cmd ==122: # 'SW' 
+        self.__go(-1,1,0)
+     elif cmd ==120: # 'S'
+        self.__go(0,1,0)
+     elif cmd ==99: #  'SE'
+        self.__go(1,1,0)
+     elif cmd ==  63 : # Up
+        self.__go(0,0,1)
+     elif cmd ==  64 : # Down
+        self.__go(0,0,-1)
      else: # command...
         self.msgcallback( "Received Key: %02x reading rest of line" % cmd)
         s = self.__readline()
         return 0
       
-
-
   def writecmd(self,buf,message='write failed',block=False):
      """
        write buf to the port, wait for ack, if bad exit, post message.
@@ -440,6 +459,39 @@ class bmf:
          self.serial.flush()
 
      self.last_command_message=message
+
+  def __go(self,xoff,yoff,zoff):
+    """
+      Z80 emulation bit...
+      move counters 0 through 5 around approproately for a displacement in any and all dimensions.
+      adjusts counters and sends them to the peer.
+ 
+    """
+    if xoff != 0:
+         newval=self.counters[0]+xoff
+         if (newval < 0 ) or (newval > 25000):
+            self.msgcallback('x limit switch')
+         else:
+            self.counters[0]=newval
+            self.sendCounterUpdate(0,newval)
+
+    if yoff != 0:
+         newval=self.counters[1]+yoff
+         if (newval < 0 ) or (newval > 40000):
+            self.msgcallback('y limit switch')
+         else:
+            self.counters[1]=newval
+            self.sendCounterUpdate(1,newval)
+
+    if zoff != 0:
+         newval=self.counters[2]+zoff
+         if (newval < 0 ) or (newval > 1000):
+            self.msgcallback('z limit switch')
+         else:
+            self.counters[2]=newval
+            self.sendCounterUpdate(2,newval)
+
+
 
   def sendStringXY(self,x,y,buf):
       """

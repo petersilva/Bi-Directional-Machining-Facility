@@ -89,7 +89,7 @@ class LogWindow(QtGui.QMainWindow):
      #self.setLayout(loglayout)
      parent.addDockWidget(QtCore.Qt.LeftDockWidgetArea, self.msgdock)
      parent.viewMenu.addAction(self.msgdock.toggleViewAction())
-
+     self.msgdock.hide()
      
   def minimumSizeHint(self):
      return(QtCore.QSize(200,200))

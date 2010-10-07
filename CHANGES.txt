@@ -26,9 +26,7 @@ TODO:
 		have peer send it back, 
 		write it out.
   -- eliminate lots of dead code:
-       -- all the 'go' routines.
        -- self.last_update in GUI (replaced by timed stuff.)
-  -- Move go routines to be used by test bot.
   -- subtract Acks?  Do we need them?
        -- Acks are not generated, current flag does nothing in app.
   -- add LEDS?
@@ -36,7 +34,11 @@ TODO:
   -- have toggles stay depressed when appropriiate.
 
 DONE: 
+  -- go routines removed from GUI, and a single go routine in __init__.py
+  -- go routine now returns a counter update to BMF peer (emulation function.)
+  -- go routines now called on receipt of key stroke.
   -- added leading 0´s to character display of counter values.
+  -- eliminated last_update
 
 2010/10/06:
   -- Docking Widget re-factor.

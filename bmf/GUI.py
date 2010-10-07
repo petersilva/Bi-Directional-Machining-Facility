@@ -64,12 +64,6 @@ class GUI(QtGui.QMainWindow):
     w.setAutoRepeatInterval(50)
     self.connect(w, QtCore.SIGNAL('clicked()'), action)
 
-    # FIXME:  correct fix is to remove the otheraction argument and all the __go routines.
-    # support for otheraction suppressed, this used for the go routines.
-    #  z80 is to have complete control of counteers, and these routines 
-    #  tend to just update the counters.
-    #if otheraction != None:
-    #   self.connect(w, QtCore.SIGNAL('clicked()'), otheraction)
     return(w)
 
 
@@ -114,38 +108,6 @@ class GUI(QtGui.QMainWindow):
     self.bmf.counters[5] = 0
     
 
-  def __go(self,xoff,yoff,zoff):
-    """
-      move counters 0 through 5 around approproately for a displacement in any and all dimensions.
-      
-    """
-    x=self.counters.qw.axc.value()
-    y=self.counters.qw.ayc.value()
-    z=self.counters.qw.azc.value()
-    #print "go at: %d,%d,%d" % (x, y, z)
-    limit=False
-    x+=xoff
-    y+=yoff
-    z+=zoff
-
-    #limit switch
-    if (x < 0) or (y <0) or (z<0) or (x > 25000) or (y > 40000) or (z >1000) :
-       return 
-
- 
-    #print "going to: %d,%d,%d" % (x, y, z)
-
-    self.bmf.counters[0] = x
-    self.bmf.counters[1] = y
-    self.bmf.counters[2] = z
-
-    self.bmf.counters[3] = self.counters.qw.rxc.value()+xoff
-    self.bmf.counters[4] = self.counters.qw.ryc.value()+yoff
-    self.bmf.counters[5] = self.counters.qw.rzc.value()+zoff
-
-    self.updateGUICounters()
-
-
   def updateGUICounters(self):
     """
         Actually do the work to update the GUI, not just the internal counters.
@@ -163,36 +125,6 @@ class GUI(QtGui.QMainWindow):
     self.counters.qw.ryc.display(self.bmf.counters[4])
     self.counters.qw.rzc.display(self.bmf.counters[5])
 
-
-  def __goNW(self):
-    self.__go(-1,-1,0)
-
-  def __goN(self):
-    self.__go(0,-1,0)
-
-  def __goNE(self):
-    self.__go(-1,1,0)
-
-  def __goW(self):
-    self.__go(-1,0,0)
-
-  def __goE(self):
-    self.__go(1,0,0)
-
-  def __goSW(self):
-    self.__go(-1,1,0)
-
-  def __goS(self):
-    self.__go(0,1,0)
-
-  def __goSE(self):
-    self.__go(1,1,0)
-
-  def __goUp(self):
-    self.__go(0,0,1)
-
-  def __goDown(self):
-    self.__go(0,0,-1)
 
   def __connect(self):
     """
@@ -440,7 +372,6 @@ class GUI(QtGui.QMainWindow):
     else:
         self.log.logUpdate()
  
-    self.last_update=time.time()
     self.statusBar().showMessage(self.msg)
 
     # ensure radio button consistency.
@@ -613,7 +544,7 @@ class GUI(QtGui.QMainWindow):
     #self.tab.addTab(self.stg,"Settings")
     self.addDockWidget(QtCore.Qt.LeftDockWidgetArea, self.stg.dock)
     self.viewMenu.addAction(self.stg.dock.toggleViewAction())
-    self.stg.dock.toggleViewAction()
+    self.stg.dock.hide()
 
   def __initTesting(self):
     """
@@ -648,7 +579,7 @@ class GUI(QtGui.QMainWindow):
     #self.tab.addTab(self.tst,"Testing")
     self.addDockWidget(QtCore.Qt.LeftDockWidgetArea, self.tst.dock)
     self.viewMenu.addAction(self.tst.dock.toggleViewAction())
-
+    self.tst.dock.hide()
 
 
 
@@ -748,7 +679,6 @@ class GUI(QtGui.QMainWindow):
      #self.show()
      self.setCentralWidget(self.charDisplayWindow)
 
-     self.last_update=time.time()
      self.update_in_progress=False
      self.updateTimer = QtCore.QTimer(self)
      self.connect(self.updateTimer, QtCore.SIGNAL("timeout()"), self.__routineUpdate )
