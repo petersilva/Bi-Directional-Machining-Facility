@@ -528,18 +528,6 @@ class GUI(QtGui.QMainWindow):
     stglayout.addWidget(self.stg.disconnect,5,2,1,2)
     self.stg.disconnect.setAutoRepeat(False)
 
-    self.stg.showlabel = QtGui.QLabel("Show:")
-    stglayout.addWidget(self.stg.showlabel,6,0)
-
-    self.stg.log = self.__button('Log', self.stg, self.log.Show)
-    stglayout.addWidget(self.stg.log,6,1,1,1)
-
-    self.stg.dsp = self.__button('Display', self.stg, self.charDisplayWindow.Show)
-    stglayout.addWidget(self.stg.dsp,6,2,1,2)
-
-    self.stg.cnt = self.__button('Counters', self.stg, self.counters.Show)
-    stglayout.addWidget(self.stg.cnt,6,4,1,2)
-
 
     #self.tab.addTab(self.stg,"Settings")
     self.addDockWidget(QtCore.Qt.LeftDockWidgetArea, self.stg.dock)
@@ -579,9 +567,17 @@ class GUI(QtGui.QMainWindow):
     """
        update the GUI with labels from bmf
     """
-    for i in xrange(0,3):
-        self.leds.led[0].setText(self.bmf.labels[i])
-    
+    for i in xrange(0,4):
+        self.leds.led[i].setText(self.bmf.labels[i])
+
+    self.counters.qw.al.setText(self.bmf.labels[4])
+    self.counters.qw.axcl.setText(self.bmf.labels[5])
+    self.counters.qw.aycl.setText(self.bmf.labels[6])
+    self.counters.qw.azcl.setText(self.bmf.labels[7])
+    self.counters.qw.rl.setText(self.bmf.labels[8])
+    self.counters.qw.rxcl.setText(self.bmf.labels[9])
+    self.counters.qw.rycl.setText(self.bmf.labels[10])
+    self.counters.qw.rzcl.setText(self.bmf.labels[11])
 
 
   def updateLEDS(self):

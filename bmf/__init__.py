@@ -101,10 +101,11 @@ class bmf:
      self.flags = flags
      self.msgcallback=msgcallback
      self.display=display
-     self.updateReceived=0    
+     self.updateReceived=0xff
      self.leds=0                   # state of the LED indicators received via op-code 0x85
      # labels for LED indicators received via op-code 0x86, default settings...
-     self.labels= [ 'Home XY', 'Step On', 'Coolant', 'Full Time' ] 
+     self.labels= [ 'Home XY', 'Step On', 'Coolant', 'Full Time',
+                    'Absolute', 'X', 'Y', 'Z', 'Counter', 'X', 'Y', 'Z' ] 
 
      self.counters = []
      self.counter_display = []
@@ -199,7 +200,6 @@ class bmf:
 
       
      self.serial=s
-
 
 
  

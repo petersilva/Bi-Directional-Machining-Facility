@@ -1,17 +1,13 @@
-Working On:
-  -- make leds work?
-        -- should clicking cause an action?
-        -- status update via flags?
-        -- label set via op-code?
 
 TODO:
+  -- bug: click on flags causes value change...
   -- decimal in counters.
      will not match, because have to convert to decimals, and will not match
      integer counters. 
   -- nth character display...
        opcode.
-  -- Manual Data Entry.? Tab?
   -- documentation review.
+        -- help function in GUI?
   -- Unit Testing?
   -- logging to a text file... 
         -- add file name choice to Settings.
@@ -34,7 +30,12 @@ TODO:
   -- have toggles stay depressed when appropriiate.
 
 DONE: 
-  -- re-tested file transfer, is busted, misc. bug-fixes.
+  -- removed display switches in Settings Menu, redundant vs. View menu.
+  -- re-tested file transfer, is busted, misc. bug-fixes. works now.
+  -- make leds work?
+        -- should clicking cause an action?
+        -- status update via flags.
+        -- label set via op-code.
 
 
 

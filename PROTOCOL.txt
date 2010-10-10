@@ -99,6 +99,10 @@ Other opcodes are:
      Hi - most significant byte of counter whose value is to be set.
      Lo - least significant byte of counter whose value is to be set.
 
+    counters 0,1,2 are for the left column in the Counter Display.
+    counters 3,4,5 are for the right column in the Counter Display.
+    counters above 5 are not displayed unless programmed for the
+    character display.
 
   83 - Acknowledge last command received
      <status>, LF - completion status of last command received.
@@ -129,7 +133,9 @@ Other opcodes are:
 
      index is straight...
      Idx:     0-3 LEDS 0-3.
-    
+                  Counter Display
+              4-7 Column heading, then labels for three counters (0,1,2) 
+              8-11 2nd column heading, labels for three counters (3,4,5)
 
   90 -> 9f - update counters 0 through f.
      <Hi>,<Lo>,LF
