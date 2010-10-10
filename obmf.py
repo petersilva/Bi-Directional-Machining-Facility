@@ -36,6 +36,7 @@ def usage():
   obmf <options> command <arguments> 
     -p / --port = "COM2:", or "/dev/ttyS0"
     -s / --speed = 38400 
+    -l / --logfile = "bmf.log"
     -D / --debug = <flags>    
            flags:  1 - simulate: port is a write only file.
 		   2 - suppress/ignore acknowledgements
@@ -58,16 +59,12 @@ import getopt
 
 last_update=0
 
-def print_msg(str):
+def print_msg(s):
 
     global last_update
 
     now=time.time()
-    #print "now: ", now, " then: ", last_update, "diff: ", now-last_update
-    if (now-last_update) < 0.2:
-        return
-    last_update=now
-    print str
+    print '%s - %s' % ( str(time.time()), s)
 
 
 def operate_bmf(port=None,cmd="view",speed=38400,dbg=0):
@@ -132,6 +129,8 @@ if __name__ == '__main__':
     for o, a in opts:
       if o in ( "-f", "--f", "--flags"):
          dbg = int(a)
+      elif o in ( "-l", "--logfile"):
+         logfile = a
       elif o in ( "-p", "--port"):
          port = a
       elif o in ( "-s", "--speed"):

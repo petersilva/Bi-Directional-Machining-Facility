@@ -22,7 +22,14 @@ FLAG_NO_ACK     = 2 # do not wait for acknowledgements (implied by 01)
 FLAG_NET_SERVER = 4 # network server 'port=<port>'  <port> -> tcpip port # 8888
 FLAG_NET_CLIENT = 8 # network client 'port=<host>:<port>' -> localhost:8888
 
+# Flag values for updateReceived...
+# if a new value rx'd from peer since the last UI update. (like a dirty bit)
 
+FLAG_UPDATE_STRING  = 0x01
+FLAG_UPDATE_COUNTER = 0x02
+FLAG_UPDATE_LEDS    = 0x04
+FLAG_UPDATE_LABELS  = 0x08
+FLAG_UPDATE_LOG     = 0x10
 
 BMF_BULK_RECORD_LENGTH = 24 
 
@@ -48,7 +55,15 @@ TRIGGER_INTERRUPT = 0x0A
 FRAME_TYPE_HEX    = ':'    # ':'
 FRAME_ACK_OK      = '\x00'
  
-
+def chksum(chunk):
+  """
+     calculate a intel hex algorithm checksum for the given chunk of data.
+  """
+  ck=0
+  for s in chunk :
+      ck += ord(s) 
+  ck = (256 - (ck & 0xff)) & 0xff
+  return ck
 
 class bmf:
   """
@@ -86,7 +101,10 @@ class bmf:
      self.flags = flags
      self.msgcallback=msgcallback
      self.display=display
-     self.updateReceived=False
+     self.updateReceived=0    
+     self.leds=0                   # state of the LED indicators received via op-code 0x85
+     # labels for LED indicators received via op-code 0x86, default settings...
+     self.labels= [ 'Home XY', 'Step On', 'Coolant', 'Full Time' ] 
 
      self.counters = []
      self.counter_display = []
@@ -319,7 +337,8 @@ class bmf:
         line = self.__readn(23)  # read the line
         self.writecmd("%c%c%c" % ( 0x83, 0, 0x0a )) # ack the line.
         datalen=ord(line[0])
-        self.msgcallback( "rx blk, length=%d, acked." % datalen )
+        print  "rx blk, length=%d, acked." % datalen 
+        #self.msgcallback( "rx blk, length=%d, acked." % datalen )
         #FIXME:  does not validate checksum.
         #FIXME:  discards data received.
         return 0
@@ -340,7 +359,7 @@ class bmf:
             self.display.writeStringXY(x,y,s[0:-1])
 
 
-        self.updateReceived=True
+        self.updateReceived= self.updateReceived | FLAG_UPDATE_STRING
         return 0 
      elif cmd == 0x82: # update 16-bit Counter
         buf=self.__readn(4)
@@ -353,7 +372,7 @@ class bmf:
                 self.counter_display[counter_index][1],
                 "%02d.%03d" % ( counter_value / 1000 , counter_value % 1000 ))
 
-        self.updateReceived=True
+        self.updateReceived= self.updateReceived | FLAG_UPDATE_COUNTER
         if ord(buf[3]) != TRIGGER_INTERRUPT:
            self.msgcallback( 
              "malformed counter update. last char is: 0x%02x " % ord(buf[3]) )
@@ -392,6 +411,20 @@ class bmf:
         else:
             self.msgcallback( "show counter %d @ %d,%d" % (counter_index,x,y))
             self.counter_display[counter_index] = ( x, y )
+
+     elif cmd == 0x85: # update LED's
+        buf=self.__readn(2)
+        self.leds=buf[0]
+        self.updateReceived= self.updateReceived | FLAG_UPDATE_LEDS
+
+        if ord(buf[1]) != TRIGGER_INTERRUPT:
+           self.msgcallback( 
+             "malformed LED update. cmd=0x%02x, last char is: 0x%02x " % (cmd,ord(buf[1])) )
+
+     elif cmd == 0x86: # update labels.
+        led_index=ord(self.__readn()) 
+        self.labels[led_index] = self.__readline()       
+        self.updateReceived= self.updateReceived | FLAG_UPDATE_LABELS
 
      elif 0x90 <= cmd <= 0x9f:   # per counter update opcodes.
         # receipt from sendCounterUpdate 
@@ -561,7 +594,8 @@ class bmf:
      mx = len(data)
      addr=baseaddress
      while i < mx:
-        self.msgcallback( "sendbulkbin looping: %d" % i )
+        self.msgcallback( "sendbulkbin looping: %d, mx:%d" % (i,mx) )
+        print "sendbulkbin looping: %d, mx:%d" % (i,mx) 
         last=i+chunksz
         if last >= mx:
           last=mx
@@ -577,16 +611,17 @@ class bmf:
         chunk = prefix + data[i:last]
 
         # calculate checksum for chunk...
-        cksum=0
-        for s in chunk :
-            cksum += ord(s) 
-        cksum = (256 - (cksum & 0xff)) & 0xff
+        #cksum=0
+        #for s in chunk :
+        #    cksum += ord(s) 
+        #cksum = (256 - (cksum & 0xff)) & 0xff
+        cksum=chksum(chunk)
 
         # build binary record, including checksum and padding.
         self.binrec = FRAME_TYPE_HEX + chunk + chr(cksum) 
         padlen = BMF_BULK_RECORD_LENGTH - len(self.binrec) 
         self.binrec += '\0' * (padlen - 1)
-        self.binrec += TRIGGER_INTERRUPT 
+        self.binrec += chr(TRIGGER_INTERRUPT) 
 
         self.writecmd( self.binrec,
               "error between bytes %d and %d" % (i,last), True )
@@ -594,6 +629,7 @@ class bmf:
         i=last
 
      # switch back to command mode...
+     self.msgcallback('Completed file send of %d bytes' % mx )
      self.writecmd( FRAME_TYPE_HEX + '\00' * 3 + "\x01\xFF" + '\0' * 18,
               "error on return to command mode", True )   
      self.readpending()
@@ -627,8 +663,8 @@ class bmf:
 
     # pad to 24 characters long with NULLS.
     padlen = BMF_BULK_RECORD_LENGTH - len(record_to_write) 
-    record_to_write += '\0' * padlen-1 
-    record_to_write += TRIGGER_INTERRUPT 
+    record_to_write += '\0' * (padlen-1)
+    record_to_write += chr(TRIGGER_INTERRUPT) 
 
     return( record_to_write )
 
@@ -657,11 +693,11 @@ class bmf:
          self.readcmd(block=True)
 
          byte_count += len(self.binrec) 
+         print 'bytes done: %d', bytes
 
      #FIXME: pray hex file is well-formed so switch back to command 
      #       mode happens.
-     self.msgcallback( "lines: %d, bytes: %d written." % 
-                               ( line_number, byte_count ) )
+     self.msgcallback( "lines: %d, bytes: %d written." % ( line_number, byte_count ) )
      f.close()
 
   def TestCharCounters(self):

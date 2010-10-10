@@ -42,10 +42,11 @@ class GUI(QtGui.QMainWindow):
        save the given text to the application log, and trigger a conditional ui update.
     """
     self.log.add(text)
-    #self.logfile.write(text + "\n")
+    self.logfile.write(text.encode("utf-8"))
+    self.logfile.write("\n")
 
     if self.connected:
-       self.bmf.updateReceived=True
+       self.bmf.updateReceived|= bmf.FLAG_UPDATE_LOG
     self.__guiupdate()
 
   def __logUI(self,msg):
@@ -357,11 +358,17 @@ class GUI(QtGui.QMainWindow):
         return
 
     if self.connected:
-        if self.bmf.updateReceived:
+        if self.bmf.updateReceived & bmf.FLAG_UPDATE_LOG:
            self.log.logUpdate()
+        if self.bmf.updateReceived & bmf.FLAG_UPDATE_COUNTER:
            self.updateGUICounters()
+        if self.bmf.updateReceived & ( bmf.FLAG_UPDATE_STRING | bmf.FLAG_UPDATE_COUNTER ):
            self.charDisplayWindow.update()
-           self.bmf.updateReceived = False
+        if self.bmf.updateReceived & bmf.FLAG_UPDATE_LEDS:
+           self.updateLEDS()
+        if self.bmf.updateReceived & bmf.FLAG_UPDATE_LABELS:
+           self.updateLabels()
+        self.bmf.updateReceived = 0
     else:
         self.log.logUpdate()
  
@@ -551,16 +558,16 @@ class GUI(QtGui.QMainWindow):
     ledlayout=QtGui.QVBoxLayout(self.leds)
 
     self.leds.led = []
-    self.leds.led.append(QtGui.QRadioButton('Home XY', self.leds))
+    self.leds.led.append(QtGui.QRadioButton('Home ZZ', self.leds))
     self.leds.led[0].setAutoExclusive(False)
     ledlayout.addWidget(self.leds.led[0])
-    self.leds.led.append(QtGui.QRadioButton('Step On', self.leds))
+    self.leds.led.append(QtGui.QRadioButton('Step Off', self.leds))
     self.leds.led[1].setAutoExclusive(False)
     ledlayout.addWidget(self.leds.led[1])
-    self.leds.led.append( QtGui.QRadioButton('Coolant', self.leds) )
+    self.leds.led.append( QtGui.QRadioButton('Heating', self.leds) )
     self.leds.led[2].setAutoExclusive(False)
     ledlayout.addWidget(self.leds.led[2])
-    self.leds.led.append( QtGui.QRadioButton('Full Time', self.leds) )
+    self.leds.led.append( QtGui.QRadioButton('Part Time', self.leds) )
     self.leds.led[3].setAutoExclusive(False)
     ledlayout.addWidget(self.leds.led[3])
 
@@ -568,6 +575,21 @@ class GUI(QtGui.QMainWindow):
     self.addDockWidget(QtCore.Qt.BottomDockWidgetArea, self.leds.dock)
     self.viewMenu.addAction(self.leds.dock.toggleViewAction())
 
+  def updateLabels(self):
+    """
+       update the GUI with labels from bmf
+    """
+    for i in xrange(0,3):
+        self.leds.led[0].setText(self.bmf.labels[i])
+    
+
+
+  def updateLEDS(self):
+    """
+       read the led flag settings from the bmf, apply to GUI.
+    """
+    for i in xrange(0,3):
+        self.leds.led[0].setChecked(self.bmf.leds&(1<<i))
 
   def __initTesting(self):
     """
@@ -610,7 +632,7 @@ class GUI(QtGui.QMainWindow):
      self.__disconnect()
      self.log.close()
      self.counters.close()
-     #self.logfile.close()
+     self.logfile.close()
      self.close()
      
   def __clear(self):
@@ -619,7 +641,7 @@ class GUI(QtGui.QMainWindow):
      """
      self.charDisplay.clear()
      if self.connected:
-        self.bmf.updateReceived=True
+        self.bmf.updateReceived=0xff
      self.charDisplayWindow.update()
      
 
@@ -634,12 +656,13 @@ class GUI(QtGui.QMainWindow):
      self.exy=random.randint(0,self.charDisplay.rows-1)
      self.exx=random.randint(0,self.charDisplay.columns-1)
 
-     if self.connected:
-         self.bmf.counters[0]=1000*self.exx
-         self.bmf.counters[1]=1000*self.exy
-         self.bmf.updateReceived=True
-     else:
-         self.charDisplayWindow.update()
+     #if self.connected:
+     #    self.bmf.counters[0]=1000*self.exx
+     #    self.bmf.counters[1]=1000*self.exy
+     #    self.bmf.updateReceived=True
+     #else:
+
+     self.charDisplayWindow.update()
 
       
 
@@ -709,5 +732,5 @@ class GUI(QtGui.QMainWindow):
      self.updateTimer.setInterval(50)
      self.updateTimer.start()
 
-     #self.logfile=open("bmf.log","w")
+     self.logfile=open("bmf.log","w")
      self.__logit("Ready")

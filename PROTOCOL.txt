@@ -120,6 +120,16 @@ Other opcodes are:
 
      i=7f,j=7f -> cancel (stop updating counter value here.)
  
+  85 - Update LEDS
+     <LED>,LF
+     bit mask of LEDS to light.
+
+  86 - Update Labels - change a label in the UI somewhere.
+     <idx>,String,LF
+
+     index is straight...
+     Idx:     0-3 LEDS 0-3.
+    
 
   90 -> 9f - update counters 0 through f.
      <Hi>,<Lo>,LF

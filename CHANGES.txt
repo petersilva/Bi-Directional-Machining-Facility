@@ -1,10 +1,10 @@
-TODO:
- 
+Working On:
   -- make leds work?
         -- should clicking cause an action?
         -- status update via flags?
         -- label set via op-code?
 
+TODO:
   -- decimal in counters.
      will not match, because have to convert to decimals, and will not match
      integer counters. 
@@ -14,11 +14,13 @@ TODO:
   -- documentation review.
   -- Unit Testing?
   -- logging to a text file... 
+        -- add file name choice to Settings.
         -- portable way (what's a \n on win?))
         -- good method of logfile name selection.
         -- log everything...
         -- maybe z80 will log too?
   -- FIXME: reception of intel hex format - Michel thinking about it...
+        -- pick a directory. Store the data there.
 	-- vrfy checksums.
 	-- store them to file?
         -- loopback test, 
@@ -32,6 +34,11 @@ TODO:
   -- have toggles stay depressed when appropriiate.
 
 DONE: 
+  -- re-tested file transfer, is busted, misc. bug-fixes.
+
+
+
+2010/10/06:
   -- made keyboard faster: eliminate long autorepeat delay, shorten interval 10x to 5 ms.
   -- add LEDS (visual only for now...)
   -- changed text buttons to arrows.
@@ -42,7 +49,7 @@ DONE:
   -- eliminate lots of dead code:
        -- self.last_update in GUI (replaced by timed stuff.)
 
-2010/10/06:
+2010/10/05:
   -- added leading 0´s to character display of counter values.
   -- Docking Widget re-factor.
 
