@@ -330,16 +330,26 @@ class bmf:
      if cmd == 0x80: #enter blockmode, prepare to rx data.
         linefeed=self.__readn()
         #self.writecmd("%c%c%c" % ( 0x83, 0, 0x0a )) # ack the line.
+        self.file_length=0
         return 0
      elif cmd == 0x0a: # currupted, resync in prog... but next will be good...
         return 0
      elif cmd == 0x3a : # receive an intel hex block (24 chars.)
         line = self.__readn(23)  # read the line
-        self.writecmd("%c%c%c" % ( 0x83, 0, 0x0a )) # ack the line.
         datalen=ord(line[0])
-        print  "rx blk, length=%d, acked." % datalen 
-        #self.msgcallback( "rx blk, length=%d, acked." % datalen )
-        #FIXME:  does not validate checksum.
+        self.file_length += datalen
+
+        #validate checksum.
+        sum=chksum(line[0:datalen+4])
+        if sum == ord(line[datalen+4]) :
+            ack=0
+        else:
+            ack=1
+        
+        self.writecmd("%c%c%c" % ( 0x83, ack, 0x0a )) # ack the line.
+         
+        print  "rx blk, file_length=%d, len=%d, ack=%d, sum=%d vs. pkt:%d" \
+               %  ( self.file_length, datalen, ack, sum, ord(line[datalen+4]) )
         #FIXME:  discards data received.
         return 0
 
@@ -610,12 +620,8 @@ class bmf:
         prefix = "%c%c%c\0" % (last-i,address1,address2)
         chunk = prefix + data[i:last]
 
-        # calculate checksum for chunk...
-        #cksum=0
-        #for s in chunk :
-        #    cksum += ord(s) 
-        #cksum = (256 - (cksum & 0xff)) & 0xff
         cksum=chksum(chunk)
+        print 'checksum: %d' % cksum
 
         # build binary record, including checksum and padding.
         self.binrec = FRAME_TYPE_HEX + chunk + chr(cksum) 

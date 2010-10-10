@@ -1,4 +1,7 @@
 
+WORKING ON:
+  -- verification receipt of intel-hex records.
+
 TODO:
   -- bug: click on flags causes value change...
   -- decimal in counters.
