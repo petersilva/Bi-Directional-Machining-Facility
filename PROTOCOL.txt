@@ -74,10 +74,17 @@ Other opcodes are:
      ':' 00 01 ff 00 00 00 ... 
 
   80 - Block Mode
+     <name>,LF
+  
      Initiate a block mode transfer.  Data transfer uses intel hex format data records.
-     In this mode, transfers are synchronous.  Sender sends one intel hex record, awaits an acknowledgement.
-     if sender receives negative acknowledgement, sender should resend.
-     FIXME: this is an infinite loop... 
+     In this mode, transfers are synchronous.  Sender sends one intel hex record, 
+     awaits an acknowledgement.  if sender receives negative acknowledgement, sender 
+     should resend.
+
+     <name>, is optional.  It can be used if the peer has a file system available, to write
+     the file.
+
+     FIXME: retransmission is an infinite loop...  limit it somehow?
      
   81 - Display characters
       <x>, <y>, <string> LF
@@ -136,6 +143,12 @@ Other opcodes are:
                   Counter Display
               4-7 Column heading, then labels for three counters (0,1,2) 
               8-11 2nd column heading, labels for three counters (3,4,5)
+
+  87 - Send Me - request z80 dump contents of memory.
+     SH,SL,CH,CL,LF
+
+     Start Address, High, then Low byte.
+     transfer count, High, then low byte.
 
   90 -> 9f - update counters 0 through f.
      <Hi>,<Lo>,LF

@@ -159,6 +159,43 @@ class GUI(QtGui.QMainWindow):
      self.__logit( "Disconnected" )
 
 
+  def pullfile(self):
+    """
+       FIXME: Not yet Implemented!
+
+       GUI element to have Z80 send requested data to PC.
+       Post a filename dialog.
+       Post a start address.
+       Post a byte count.
+
+       issue a pullfile command, to the bmf.
+
+       FIXME: Cheapie triple dialog, should probably have a single one.
+    """
+    filename = QtGui.QFileDialog.getOpenFileName(self, 
+                  "File to Pull", QtCore.QDir.currentPath())
+
+    self.__logit( "asking for file: %s" % filename )
+
+    if filename == None:
+        self.__logit( "aborted" )
+        return
+
+    baseaddress, ok = QtGui.QInputDialog.getInteger(self,
+        "Start Address", "Address", 0x4000, 0, 0xffff)
+    if not ok:
+        self.__logit( "aborted, no base address given." )
+        return
+
+    count, ok = QtGui.QInputDialog.getInteger(self,
+        "How many bytes?", "Count", 0x4000, 0, 0xffff)
+             
+    if not ok:
+        self.__logit( "aborted, no count given." )
+        return
+
+    self.bmf.sendPullFile(filename,basaddress,count)
+
   def sendfile(self):
     """
        GUI element to send file data to the BMF peer.  This is done using intel hex format binary transfers.
@@ -173,7 +210,7 @@ class GUI(QtGui.QMainWindow):
        
     """
     filename = QtGui.QFileDialog.getOpenFileName(self, 
-                  "Find Files", QtCore.QDir.currentPath())
+                  "File to Send", QtCore.QDir.currentPath())
 
     self.__logit( "sending file: %s" % filename )
 

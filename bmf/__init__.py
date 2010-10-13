@@ -328,12 +328,22 @@ class bmf:
      #print "cmd=%02x" % cmd
    
      if cmd == 0x80: #enter blockmode, prepare to rx data.
-        linefeed=self.__readn()
+        filename=self.__readn()
+        filename=filename.strip()
+        if filename != "":
+           self.writefilename=filename
+        else:
+           self.writefilename="bmf_dump_%s.hex" % time.strftime("%Y%m%d_%H%M%S", 
+                time.localtime(time.time()))
+
+        self.writefile=open(self.writefilename,'w')
+        print "writefilename: %s" % self.writefilename
         #self.writecmd("%c%c%c" % ( 0x83, 0, 0x0a )) # ack the line.
         self.file_length=0
         return 0
      elif cmd == 0x0a: # currupted, resync in prog... but next will be good...
         return 0
+
      elif cmd == 0x3a : # receive an intel hex block (24 chars.)
         line = self.__readn(23)  # read the line
         datalen=ord(line[0])
@@ -347,10 +357,23 @@ class bmf:
             ack=1
         
         self.writecmd("%c%c%c" % ( 0x83, ack, 0x0a )) # ack the line.
-         
         print  "rx blk, file_length=%d, len=%d, ack=%d, sum=%d vs. pkt:%d" \
                %  ( self.file_length, datalen, ack, sum, ord(line[datalen+4]) )
-        #FIXME:  discards data received.
+
+        if ack == 0: #line is good, write it out.
+           #FIXME:  if no file open, behavious undefined...
+           #write data to currently open write file.
+           if self.writefilename[-4:] == '.hex':
+              record_to_write = FRAME_TYPE_HEX + \
+                        binascii.hexlify(line[0:datalen+5]).upper() + "\n"
+           else:
+              record_to_write = line[4:datalen+4]
+
+           self.writefile.write( record_to_write )
+
+           if datalen==0:
+              self.writefile.close()
+        
         return 0
 
      elif (cmd == 0x81): # display character string
@@ -435,6 +458,18 @@ class bmf:
         led_index=ord(self.__readn()) 
         self.labels[led_index] = self.__readline()       
         self.updateReceived= self.updateReceived | FLAG_UPDATE_LABELS
+
+     elif cmd == 0x87: # pull file.
+        buf=self.__readn(4)
+        start  = ord(buf[0])*256+ord(buf[1])
+        mxlen  = ord(buf[2])*256+ord(buf[3])
+        filename=self.__readline()
+        #FIXME: Not Implemented yet!   You read it, now what?
+        #  
+        if filename[-4:] == '.hex':
+           self.sendbulkhex(filename)
+        else:
+           self.sendbulkbin(filename,start,mxlen)
 
      elif 0x90 <= cmd <= 0x9f:   # per counter update opcodes.
         # receipt from sendCounterUpdate 
@@ -572,6 +607,17 @@ class bmf:
       """
       self.writecmd( "%c%c%c%c\n" % ( (0x84), i, (x|0x80), (y|0x80) ))
 
+  def sendPullFile(self,filename,start,count):
+      """
+        send a request for the peer to ship me a file that it knows.
+        data will be sent in intel hex format, which includes memory locations.  So have
+        the locations begin at start, and have count bytes sent.
+        FIXME: not implemented yet.
+      """
+      self.writecmd( "%c%c%c%c%c%s\n" % ( 0x87, chr(start>>8), chr(start&0xff),
+              chr(count>>8), chr(count&0xff), filename ))
+      return
+
   def sendKey(self,str):
      """
         send a key to the peer.
@@ -641,13 +687,23 @@ class bmf:
      self.readpending()
 
 
-  def sendbulkbin(self,filename,baseaddress=0x4000):
+  def sendbulkbin(self,filename,baseaddress=0x4000,max=0x4000):
     f=open(filename, 'r')  # might need binary mode 'b' under windows.
     data=f.read()
     f.close()
+    if len(data) > max:
+        self.msgcallback('Error: file %s is %d, but only reserverd %d bytes' % (filename, len(data), max ))
+        return
+
     self.sendbulkbinbuffer(data,baseaddress)
 
+  def pullfile(self,filename,baseaddress,count):
+    """
+       issue a data pull request, setting the output file name...
 
+       FIXME: not implemented yet.
+    """ 
+    return
 
   def __hexrecord2bin(self,record):
     """ convert intel hex string representation to a true binary format.

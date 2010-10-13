@@ -1,46 +1,42 @@
 
 WORKING ON:
-  -- verification receipt of intel-hex records.
+  -- logfile support not general yet.
 
 TODO:
+  -- add file name to BLOCK send...
+  -- set cwd ?
   -- bug: click on flags causes value change...
   -- decimal in counters.
-     will not match, because have to convert to decimals, and will not match
-     integer counters. 
-  -- nth character display...
-       opcode.
   -- documentation review.
         -- help function in GUI?
-  -- Unit Testing?
+  -- automated Testing.
+        -- file transfer loopback test.
+
   -- logging to a text file... 
         -- add file name choice to Settings.
-        -- portable way (what's a \n on win?))
         -- good method of logfile name selection.
-        -- log everything...
         -- maybe z80 will log too?
-  -- FIXME: reception of intel hex format - Michel thinking about it...
-        -- pick a directory. Store the data there.
-	-- vrfy checksums.
-	-- store them to file?
-        -- loopback test, 
-                read data, 
-		write to peer, 
-		have peer send it back, 
-		write it out.
   -- subtract Acks?  Do we need them?
        -- Acks are not generated, current flag does nothing in app.
   -- have routine updates make radiobuttons symmetrical.
   -- have toggles stay depressed when appropriiate.
 
-DONE: 
+2010/10/12: 
+  -- pullfile function.
+      -- complete readcmd stanza for 0x87
+  -- Added file name to 0x80 blockmode, becomes a send file op-code.
+  -- FIXME: reception of intel hex format.
+	-- vrfy checksums.
+	-- store them to file, named by 80 op-code 
+  -- verification receipt of intel-hex records. Re-Tx requested as needed.
   -- removed display switches in Settings Menu, redundant vs. View menu.
-  -- re-tested file transfer, is busted, misc. bug-fixes. works now.
+  -- re-tested file transfer, might have been busted, misc. bug-fixes. works now.
+  -- logging to a text file... 
+        -- log everything...
   -- make leds work?
         -- should clicking cause an action?
         -- status update via flags.
         -- label set via op-code.
-
-
 
 2010/10/06:
   -- made keyboard faster: eliminate long autorepeat delay, shorten interval 10x to 5 ms.
