@@ -622,7 +622,7 @@ class GUI(QtGui.QMainWindow):
        read the led flag settings from the bmf, apply to GUI.
     """
     for i in xrange(0,3):
-        self.leds.led[0].setChecked(self.bmf.leds&(1<<i))
+        self.leds.led[i].setChecked((int(self.bmf.leds)&(1<<i)))
 
   def __initTesting(self):
     """

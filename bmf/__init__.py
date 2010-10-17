@@ -447,7 +447,7 @@ class bmf:
 
      elif cmd == 0x85: # update LED's
         buf=self.__readn(2)
-        self.leds=buf[0]
+        self.leds=ord(buf[0])
         self.updateReceived= self.updateReceived | FLAG_UPDATE_LEDS
 
         if ord(buf[1]) != TRIGGER_INTERRUPT:
@@ -456,7 +456,7 @@ class bmf:
 
      elif cmd == 0x86: # update labels.
         led_index=ord(self.__readn()) 
-        self.labels[led_index] = self.__readline()       
+        self.labels[led_index] = self.__readline().rstrip() 
         self.updateReceived= self.updateReceived | FLAG_UPDATE_LABELS
 
      elif cmd == 0x87: # pull file.
@@ -485,7 +485,7 @@ class bmf:
                 self.counter_display[counter_index][1],
                 "%02d.%03d" % ( counter_value / 1000 , counter_value % 1000 ))
 
-        self.updateReceived=True
+        self.updateReceived=self.updateReceived | FLAG_UPDATE_COUNTER
 
         if ord(buf[2]) != TRIGGER_INTERRUPT:
            self.msgcallback( 
@@ -605,7 +605,21 @@ class bmf:
          Send a frame to position a counter on the peer´s character display.
          (part of pseudo-Z80 emulation for testing only)
       """
-      self.writecmd( "%c%c%c%c\n" % ( (0x84), i, (x|0x80), (y|0x80) ))
+      self.writecmd( "%c%c%c%c\n" % ( chr(0x84), i, (x|0x80), (y|0x80) ))
+
+  def sendLabel(self,i,l):
+      """ change the label with index i, to the value l
+         (part of pseudo-Z80 emulation for testing only)
+      """
+      self.writecmd( "%c%c%s\n" % ( chr(0x86), chr(i), l ))
+
+  def sendLEDs(self):
+      """
+         change the values of the 8 LEDS (four are not visible)
+         the value of self.leds is sent.  is a bitmask for the values of each one.
+         (part of pseudo-Z80 emulation for testing only)
+      """
+      self.writecmd( "%c%c\n" % ( 0x85, self.leds ) )
 
   def sendPullFile(self,filename,start,count):
       """
@@ -776,6 +790,11 @@ class bmf:
      """
 
      dstart=time.time()
+     self.sendLabel(0,"Test Mode")
+     self.sendLabel(1,"Running")
+     self.sendLabel(2,"Complete")
+     self.leds=0x03
+     self.sendLEDs()
 
      self.sendStringXY(0,0, "0123456789012345678901234567890123456789012345678")
      self.sendStringXY(2,2,"welcome.")
@@ -802,6 +821,8 @@ class bmf:
      self.sendStringXY(0,10," "*columns)
      self.sendStringXY(2,10,"including 1000 hellos took %f s" % (time.time()-dstart))
      self.sendStringXY(0,11," "*columns)
+     self.leds=0x05
+     self.sendLEDs()
 
      
 

@@ -3,6 +3,7 @@ WORKING ON:
   -- logfile support not general yet.
 
 TODO:
+  -- Replace literal op-codes with consants OC_
   -- add file name to BLOCK send...
   -- set cwd ?
   -- bug: click on flags causes value change...
@@ -20,6 +21,10 @@ TODO:
        -- Acks are not generated, current flag does nothing in app.
   -- have routine updates make radiobuttons symmetrical.
   -- have toggles stay depressed when appropriiate.
+
+2010/10/17:
+  -- added leds and labels to the loopback tests.
+  -- determined that neither worked, bugfixed.
 
 2010/10/12: 
   -- pullfile function.
