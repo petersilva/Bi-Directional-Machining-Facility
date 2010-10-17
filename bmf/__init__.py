@@ -16,6 +16,7 @@ import socket
 import select
 import sys
 import random
+import os.path
 
 FLAG_WRITE_FILE = 1 # simulation mode. (does writing to a file)
 FLAG_NO_ACK     = 2 # do not wait for acknowledgements (implied by 01)
@@ -328,12 +329,12 @@ class bmf:
      #print "cmd=%02x" % cmd
    
      if cmd == 0x80: #enter blockmode, prepare to rx data.
-        filename=self.__readn()
+        filename=self.__readline()
         filename=filename.strip()
         if filename != "":
            self.writefilename=filename
         else:
-           self.writefilename="bmf_dump_%s.hex" % time.strftime("%Y%m%d_%H%M%S", 
+           self.writefilename="bmf_dump_%s" % time.strftime("%Y%m%d_%H%M%S", 
                 time.localtime(time.time()))
 
         self.writefile=open(self.writefilename,'w')
@@ -363,7 +364,7 @@ class bmf:
         if ack == 0: #line is good, write it out.
            #FIXME:  if no file open, behavious undefined...
            #write data to currently open write file.
-           if self.writefilename[-4:] == '.hex':
+           if self.writefilename[-4:].lower() == '.hex':
               record_to_write = FRAME_TYPE_HEX + \
                         binascii.hexlify(line[0:datalen+5]).upper() + "\n"
            else:
@@ -463,10 +464,10 @@ class bmf:
         buf=self.__readn(4)
         start  = ord(buf[0])*256+ord(buf[1])
         mxlen  = ord(buf[2])*256+ord(buf[3])
-        filename=self.__readline()
+        filename=self.__readline().rstrip()
         #FIXME: Not Implemented yet!   You read it, now what?
         #  
-        if filename[-4:] == '.hex':
+        if filename[-4:].tolower() == '.hex':
            self.sendbulkhex(filename)
         else:
            self.sendbulkbin(filename,start,mxlen)
@@ -628,9 +629,17 @@ class bmf:
         the locations begin at start, and have count bytes sent.
         FIXME: not implemented yet.
       """
-      self.writecmd( "%c%c%c%c%c%s\n" % ( 0x87, chr(start>>8), chr(start&0xff),
+      self.writecmd( "%c%c%c%c%c%s\n" % ( chr(0x87), chr(start>>8), chr(start&0xff),
               chr(count>>8), chr(count&0xff), filename ))
       return
+
+  def sendBulkStart(self,filename):
+     """  send frame to initiate bulk transfer
+          strips out directory part.  assume all use cwd.
+                (concession to 24 char limit in z80 uart management code.)
+     """
+     self.msgcallback(  "name: %s, basename: %s" % ( filename, os.path.basename(filename)))
+     self.writecmd( "%c%s\n" % ( chr(0x80), os.path.basename(filename) ))
 
   def sendKey(self,str):
      """
@@ -644,7 +653,7 @@ class bmf:
      )
      self.readpending()
 
-  def sendbulkbinbuffer(self,data,baseaddress=4000):
+  def sendbulkbinbuffer(self,data,filename,baseaddress=4000):
      """
        encode in intel hex format.  stuff with nuls to 23 chars, LF as 24th.
        use given baseaddress and count upwards.
@@ -657,7 +666,8 @@ class bmf:
      """
 
      # switch to block transfer mode...
-     self.sendKey('Block')
+     #self.sendKey('Block')
+     self.sendBulkStart(filename)
 
      i=0
      chunksz=16
@@ -709,7 +719,7 @@ class bmf:
         self.msgcallback('Error: file %s is %d, but only reserverd %d bytes' % (filename, len(data), max ))
         return
 
-    self.sendbulkbinbuffer(data,baseaddress)
+    self.sendbulkbinbuffer(data,filename,baseaddress)
 
   def pullfile(self,filename,baseaddress,count):
     """
@@ -756,7 +766,8 @@ class bmf:
      """
 
      # switch to block transfer mode...
-     self.sendKey('Block')
+     #self.sendKey('Block')
+     self.sendBulkStart(filename)
      f=open(filename,'r')
      line_number=0
      byte_count=0
@@ -769,7 +780,7 @@ class bmf:
          self.readcmd(block=True)
 
          byte_count += len(self.binrec) 
-         print 'bytes done: %d', bytes
+         print 'bytes done: %d', byte_count
 
      #FIXME: pray hex file is well-formed so switch back to command 
      #       mode happens.

@@ -23,6 +23,7 @@ TODO:
   -- have toggles stay depressed when appropriiate.
 
 2010/10/17:
+  -- bug-fixes to file sending (name handling was mangling them.)
   -- added leds and labels to the loopback tests.
   -- determined that neither worked, bugfixed.
 

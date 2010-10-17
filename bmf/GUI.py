@@ -218,12 +218,12 @@ class GUI(QtGui.QMainWindow):
         self.__logit( "aborted" )
     else:
          if (str(filename[-4:]).lower() == '.hex'):
-              self.bmf.sendbulkhex(filename)
+              self.bmf.sendbulkhex(str(filename))
          else:
               baseaddress, ok = QtGui.QInputDialog.getInteger(self,
                    "Où placer les données", "Addresse", 0x4000, 0, 0xffff)
               if ok:
-                self.bmf.sendbulkbin(filename,baseaddress)
+                self.bmf.sendbulkbin(str(filename),baseaddress)
 
 
   def __initKP1(self):
