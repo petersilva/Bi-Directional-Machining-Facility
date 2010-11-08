@@ -145,10 +145,19 @@ Other opcodes are:
               8-11 2nd column heading, labels for three counters (3,4,5)
 
   87 - Send Me - request z80 dump contents of memory.
-     SH,SL,CH,CL,LF
+     SH,SL,CH,CL,String,LF
 
      Start Address, High, then Low byte.
      transfer count, High, then low byte.
+     String = filename
+
+     Send me the filenamed by the string.  If the file ends in .hex, then
+     use the addressing from the file.  Otherwise, use the given start address
+     when building the intel hex transfer records.
+
+     peer is to respond with a 0x80 with the same filename followed by 
+     a series of intel-hex encoded records of data from the named file.
+     initial destination address of data given by Start.
 
   90 -> 9f - update counters 0 through f.
      <Hi>,<Lo>,LF

@@ -35,12 +35,17 @@ FLAG_UPDATE_LOG     = 0x10
 BMF_BULK_RECORD_LENGTH = 24 
 
 keycodes = { 
-     #key pad 1.                         ASCII characters:
-     '1' : 1, '2' : 2, '3' : 3,           # 1,2,3
-     '4' : 4, '5' : 5, '6' : 6,           # 4,5,6
-     '7' : 7, '8' : 8, '9' : 9,           # 7,8,9
-     '0' : 0, '.' : 46, '+/-' : 94,         # 0,.,^
-     # keypad 2.
+     #ey pad 1.                         
+     u'10' : 0x10, u'11' : 0x11, u'12' : 0x12, u'13' : 0x13, 
+     u'14' : 0x14, u'15' : 0x15, u'16' : 0x16, u'17' : 0x17, 
+     u'18' : 0x18, u'19' : 0x19, u'1a' : 0x1a, u'1b' : 0x1b,        
+     u'1c' : 0x1c, u'1d' : 0x1d, u'1b' : 0x1b, u'1f' : 0x1f, 
+     #ey pad 2.                         
+     u'20' : 0x20, u'22' : 0x22, u'22' : 0x22, u'23' : 0x23, 
+     u'24' : 0x24, u'25' : 0x25, u'26' : 0x26, u'27' : 0x27, 
+     u'28' : 0x28, u'29' : 0x29, u'2a' : 0x2a, u'2b' : 0x2b,        
+     u'2c' : 0x2c, u'2d' : 0x2d, u'2e' : 0x2e, u'2f' : 0x2f, 
+     # eypad 2 old...
      u'\u2196' : 113, u'\u2191' : 119, u'\u2197': 101,      # nw,n,e : q,w,e
      u'\u2190': 97, 'Stop': 115, u'\u2192': 100,  # W,,E : a,s,d
      u'\u2199' : 122, u'\u2193':120, u'\u2198':99,        # SW,S,SE :z,x,c
@@ -106,7 +111,31 @@ class bmf:
      self.leds=0                   # state of the LED indicators received via op-code 0x85
      # labels for LED indicators received via op-code 0x86, default settings...
      self.labels= [ 'Home XY', 'Step On', 'Coolant', 'Full Time',
-                    'Absolute', 'X', 'Y', 'Z', 'Counter', 'X', 'Y', 'Z' ] 
+                    'Absolute', 'X', 'Y', 'Z', 
+                    'Counter', 'X', 'Y', 'Z',
+                    '', '', '', '', 
+                    '10', '11', '12', '13', # keypad 1
+                    '14', '15', '16', '17', 
+                    '18', '19', '1a', '1b', 
+                    '1c', '1d', '1e', '1f', 
+                    '20', '22', '22', '23', # keypad 2
+                    '24', '25', '26', '27', 
+                    '28', '29', '2a', '2b', 
+                    '2c', '2d', '2e', '2f', 
+                    '', '', '', '',  # keypad 2
+                    '', '', '', '', 
+                    '', '', '', '',
+                    '', '', '', '',
+                    '', '', '', '', # keypad 3
+                    '', '', '', '',
+                    '', '', '', '',
+                    '', '', '', '',
+                    '', '', '', '',
+                    '', '', '', '',
+                    '', '', '', '',
+
+                    '', '', '', '' 
+            	  ] 
 
      self.counters = []
      self.counter_display = []
@@ -456,17 +485,17 @@ class bmf:
              "malformed LED update. cmd=0x%02x, last char is: 0x%02x " % (cmd,ord(buf[1])) )
 
      elif cmd == 0x86: # update labels.
-        led_index=ord(self.__readn()) 
-        self.labels[led_index] = self.__readline().rstrip() 
+        lbl_index=ord(self.__readn()) 
+        self.labels[lbl_index] = self.__readline().rstrip() 
         self.updateReceived= self.updateReceived | FLAG_UPDATE_LABELS
+        if 0x10 <= lbl_index <= 0x30 :
+            self.keycodes[ self.labels[lbl_index] ] = lbl_index
 
      elif cmd == 0x87: # pull file.
         buf=self.__readn(4)
         start  = ord(buf[0])*256+ord(buf[1])
         mxlen  = ord(buf[2])*256+ord(buf[3])
         filename=self.__readline().rstrip()
-        #FIXME: Not Implemented yet!   You read it, now what?
-        #  
         if filename[-4:].tolower() == '.hex':
            self.sendbulkhex(filename)
         else:

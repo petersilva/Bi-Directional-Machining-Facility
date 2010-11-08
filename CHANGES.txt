@@ -3,6 +3,7 @@ WORKING ON:
   -- logfile support not general yet.
 
 TODO:
+  -- Align Right labels...
   -- Replace literal op-codes with consants OC_
   -- add file name to BLOCK send...
   -- set cwd ?
@@ -21,6 +22,9 @@ TODO:
        -- Acks are not generated, current flag does nothing in app.
   -- have routine updates make radiobuttons symmetrical.
   -- have toggles stay depressed when appropriiate.
+
+2010/11/06:
+  -- 2x 16 key pads, programmed with set string op-code.
 
 2010/10/17:
   -- bug-fixes to file sending (name handling was mangling them.)

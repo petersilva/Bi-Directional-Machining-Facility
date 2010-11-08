@@ -68,13 +68,13 @@ class GUI(QtGui.QMainWindow):
     return(w)
 
 
-  def __sendkey(self): 
+  def __sendkey(self,val='hoho'): 
     """
        send a key stroke event to the peer. 
     """
-    kk= QtCore.QObject.sender(self)
+    kk=QtCore.QObject.sender(self)
     self.bmf.sendKey(unicode(kk.text()))
-    self.__logit( "%s key sent" % kk.text() )
+    self.__logit( "%s key sent" % kk.text())
 
   def __sendhex(self):
     """
@@ -232,49 +232,61 @@ class GUI(QtGui.QMainWindow):
     """
 
     self.kp1 = QtGui.QWidget()
-    self.kp1.setObjectName("Keypad 1")
+    self.kp1.setObjectName("Keypad 1x")
 
-    self.kp1.dock = QtGui.QDockWidget("Numbers",self)
+    self.kp1.dock = QtGui.QDockWidget("Keypad 1x",self)
     self.kp1.dock.setAllowedAreas( QtCore.Qt.AllDockWidgetAreas )
     self.kp1.dock.setWidget(self.kp1)
 
     kp1layout=QtGui.QGridLayout(self.kp1)
 
-    self.kp1.one = self.__button('1',self.kp1,self.__sendkey)
-    kp1layout.addWidget(self.kp1.one,0,0)
+    self.kp1.k10 = self.__button('1',self.kp1,self.__sendkey)
+    kp1layout.addWidget(self.kp1.k10,0,0)
 
-    self.kp1.two = self.__button('2', self.kp1, self.__sendkey)
-    kp1layout.addWidget(self.kp1.two,0,1)
+    self.kp1.k11 = self.__button('2', self.kp1, self.__sendkey)
+    kp1layout.addWidget(self.kp1.k11,0,1)
 
-    self.kp1.three = self.__button('3', self.kp1, self.__sendkey)
-    kp1layout.addWidget(self.kp1.three,0,2)
+    self.kp1.k12 = self.__button('3', self.kp1, self.__sendkey)
+    kp1layout.addWidget(self.kp1.k12,0,2)
 
-    self.kp1.four = self.__button('4', self.kp1, self.__sendkey)
-    kp1layout.addWidget(self.kp1.four,1,0)
+    self.kp1.k13 = self.__button('4', self.kp1, self.__sendkey)
+    kp1layout.addWidget(self.kp1.k13,0,3)
 
-    self.kp1.five = self.__button('5', self.kp1, self.__sendkey)
-    kp1layout.addWidget(self.kp1.five,1,1)
+    self.kp1.k14 = self.__button('5', self.kp1, self.__sendkey)
+    kp1layout.addWidget(self.kp1.k14,1,0)
 
-    self.kp1.six = self.__button('6', self.kp1, self.__sendkey)
-    kp1layout.addWidget(self.kp1.six,1,2)
+    self.kp1.k15 = self.__button('6', self.kp1, self.__sendkey)
+    kp1layout.addWidget(self.kp1.k15,1,1)
 
-    self.kp1.seven = self.__button('7', self.kp1, self.__sendkey)
-    kp1layout.addWidget(self.kp1.seven,2,0)
+    self.kp1.k16 = self.__button('7', self.kp1, self.__sendkey)
+    kp1layout.addWidget(self.kp1.k16,1,2)
 
-    self.kp1.eight = self.__button('8', self.kp1, self.__sendkey)
-    kp1layout.addWidget(self.kp1.eight,2,1)
+    self.kp1.k17 = self.__button('8', self.kp1, self.__sendkey)
+    kp1layout.addWidget(self.kp1.k17,1,3)
 
-    self.kp1.nine = self.__button('9', self.kp1, self.__sendkey)
-    kp1layout.addWidget(self.kp1.nine,2,2)
+    self.kp1.k18 = self.__button('9', self.kp1, self.__sendkey)
+    kp1layout.addWidget(self.kp1.k18,3,0)
 
-    self.kp1.zero = self.__button('0', self.kp1, self.__sendkey)
-    kp1layout.addWidget(self.kp1.zero,3,0)
+    self.kp1.k19 = self.__button('0', self.kp1, self.__sendkey)
+    kp1layout.addWidget(self.kp1.k19,3,1)
 
-    self.kp1.decimal = self.__button('.', self.kp1, self.__sendkey)
-    kp1layout.addWidget(self.kp1.decimal,3,1)
+    self.kp1.k1a = self.__button('.', self.kp1, self.__sendkey)
+    kp1layout.addWidget(self.kp1.k1a,3,2)
 
-    self.kp1.plusminus = self.__button('+/-', self.kp1, self.__sendkey)
-    kp1layout.addWidget(self.kp1.plusminus,3,2)
+    self.kp1.k1b = self.__button('+/-', self.kp1, self.__sendkey)
+    kp1layout.addWidget(self.kp1.k1b,3,3)
+
+    self.kp1.k1c = self.__button('1c', self.kp1, self.__sendkey)
+    kp1layout.addWidget(self.kp1.k1c,4,0)
+
+    self.kp1.k1d = self.__button('1d', self.kp1, self.__sendkey)
+    kp1layout.addWidget(self.kp1.k1d,4,1)
+
+    self.kp1.k1e = self.__button('1e', self.kp1, self.__sendkey)
+    kp1layout.addWidget(self.kp1.k1e,4,2)
+
+    self.kp1.k1f = self.__button('1f', self.kp1, self.__sendkey)
+    kp1layout.addWidget(self.kp1.k1f,4,3)
 
     #self.tab.addTab(self.kp1,"Numbers")
     self.addDockWidget(QtCore.Qt.BottomDockWidgetArea, self.kp1.dock)
@@ -287,40 +299,61 @@ class GUI(QtGui.QMainWindow):
     """
 
     self.kp2 = QtGui.QWidget()
-    self.kp2.setObjectName("Commands")
+    self.kp2.setObjectName("Keypad 2x")
 
-    self.kp2.dock = QtGui.QDockWidget("Command Keypad",self)
+    self.kp2.dock = QtGui.QDockWidget("Keypad 2x",self)
     self.kp2.dock.setAllowedAreas(QtCore.Qt.AllDockWidgetAreas )
     self.kp2.dock.setWidget(self.kp2)
 
     kp2layout=QtGui.QGridLayout(self.kp2)
 
-    self.kp2.nw = self.__button(u'\u2196', self.kp2, self.__sendkey)
-    kp2layout.addWidget(self.kp2.nw,0,0)
+    self.kp2.k20 = self.__button(u'\u2196', self.kp2, self.__sendkey)
+    kp2layout.addWidget(self.kp2.k20,0,0)
 
-    self.kp2.up = self.__button(u'\u2191', self.kp2, self.__sendkey)
-    kp2layout.addWidget(self.kp2.up,0,1)
+    self.kp2.k21 = self.__button(u'\u2191', self.kp2, self.__sendkey)
+    kp2layout.addWidget(self.kp2.k21,0,1)
 
-    self.kp2.ne = self.__button(u'\u2197', self.kp2, self.__sendkey)
-    kp2layout.addWidget(self.kp2.ne,0,2)
+    self.kp2.k22 = self.__button(u'\u2197', self.kp2, self.__sendkey)
+    kp2layout.addWidget(self.kp2.k22,0,2)
 
-    self.kp2.left = self.__button(u'\u2190', self.kp2, self.__sendkey)
-    kp2layout.addWidget(self.kp2.left,1,0)
+    self.kp2.k23 = self.__button(u'\u2190', self.kp2, self.__sendkey)
+    kp2layout.addWidget(self.kp2.k23,0,3)
 
-    self.kp2.stop = self.__button('Stop', self.kp2, self.__sendkey )
-    kp2layout.addWidget(self.kp2.stop,1,1)
+    self.kp2.k24 = self.__button('Stop', self.kp2, self.__sendkey )
+    kp2layout.addWidget(self.kp2.k24,1,0)
 
-    self.kp2.right = self.__button(u'\u2192', self.kp2, self.__sendkey)
-    kp2layout.addWidget(self.kp2.right,1,2)
+    self.kp2.k25 = self.__button(u'\u2192', self.kp2, self.__sendkey)
+    kp2layout.addWidget(self.kp2.k25,1,1)
 
-    self.kp2.sw = self.__button(u'\u2199', self.kp2, self.__sendkey)
-    kp2layout.addWidget(self.kp2.sw,2,0)
+    self.kp2.k26 = self.__button(u'\u2199', self.kp2, self.__sendkey)
+    kp2layout.addWidget(self.kp2.k26,1,2)
 
-    self.kp2.down = self.__button(u'\u2193', self.kp2, self.__sendkey)
-    kp2layout.addWidget(self.kp2.down,2,1)
+    self.kp2.k27 = self.__button(u'\u2193', self.kp2, self.__sendkey)
+    kp2layout.addWidget(self.kp2.k27,1,3)
 
-    self.kp2.se = self.__button(u'\u2198', self.kp2, self.__sendkey)
-    kp2layout.addWidget(self.kp2.se,2,2)
+    self.kp2.k28 = self.__button(u'\u2198', self.kp2, self.__sendkey)
+    kp2layout.addWidget(self.kp2.k28,2,0)
+
+    self.kp2.k29 = self.__button(u'\u2198', self.kp2, self.__sendkey)
+    kp2layout.addWidget(self.kp2.k29,2,1)
+
+    self.kp2.k2a = self.__button(u'2a', self.kp2, self.__sendkey)
+    kp2layout.addWidget(self.kp2.k2a,2,2)
+
+    self.kp2.k2b = self.__button(u'2b', self.kp2, self.__sendkey)
+    kp2layout.addWidget(self.kp2.k2b,2,3)
+
+    self.kp2.k2c = self.__button(u'2c', self.kp2, self.__sendkey)
+    kp2layout.addWidget(self.kp2.k2c,3,0)
+
+    self.kp2.k2d = self.__button(u'2d', self.kp2, self.__sendkey)
+    kp2layout.addWidget(self.kp2.k2d,3,1)
+
+    self.kp2.k2e = self.__button(u'2e', self.kp2, self.__sendkey)
+    kp2layout.addWidget(self.kp2.k2e,3,2)
+
+    self.kp2.k2f = self.__button(u'2f', self.kp2, self.__sendkey)
+    kp2layout.addWidget(self.kp2.k2f,3,3)
 
     #self.tab.addTab(self.kp2,"Commands")
     self.addDockWidget(QtCore.Qt.BottomDockWidgetArea, self.kp2.dock)
@@ -616,6 +649,41 @@ class GUI(QtGui.QMainWindow):
     self.counters.qw.rycl.setText(self.bmf.labels[10])
     self.counters.qw.rzcl.setText(self.bmf.labels[11])
 
+    self.kp1.k10.setText(self.bmf.labels[0x10])
+    self.kp1.k11.setText(self.bmf.labels[0x11])
+    self.kp1.k12.setText(self.bmf.labels[0x12])
+    self.kp1.k13.setText(self.bmf.labels[0x13])
+    self.kp1.k14.setText(self.bmf.labels[0x14])
+    self.kp1.k15.setText(self.bmf.labels[0x15])
+    self.kp1.k16.setText(self.bmf.labels[0x16])
+    self.kp1.k17.setText(self.bmf.labels[0x17])
+    self.kp1.k18.setText(self.bmf.labels[0x18])
+    self.kp1.k19.setText(self.bmf.labels[0x19])
+    self.kp1.k1a.setText(self.bmf.labels[0x1a])
+    self.kp1.k1b.setText(self.bmf.labels[0x1b])
+    self.kp1.k1c.setText(self.bmf.labels[0x1c])
+    self.kp1.k1d.setText(self.bmf.labels[0x1d])
+    self.kp1.k1e.setText(self.bmf.labels[0x1e])
+    self.kp1.k1f.setText(self.bmf.labels[0x1f])
+
+    self.kp2.k20.setText(self.bmf.labels[0x20])
+    self.kp2.k21.setText(self.bmf.labels[0x21])
+    self.kp2.k22.setText(self.bmf.labels[0x22])
+    self.kp2.k23.setText(self.bmf.labels[0x23])
+    self.kp2.k24.setText(self.bmf.labels[0x24])
+    self.kp2.k25.setText(self.bmf.labels[0x25])
+    self.kp2.k26.setText(self.bmf.labels[0x26])
+    self.kp2.k27.setText(self.bmf.labels[0x27])
+    self.kp2.k28.setText(self.bmf.labels[0x28])
+    self.kp2.k29.setText(self.bmf.labels[0x29])
+    self.kp2.k2a.setText(self.bmf.labels[0x2a])
+    self.kp2.k2b.setText(self.bmf.labels[0x2b])
+    self.kp2.k2c.setText(self.bmf.labels[0x2c])
+    self.kp2.k2d.setText(self.bmf.labels[0x2d])
+    self.kp2.k2e.setText(self.bmf.labels[0x2e])
+    self.kp2.k2f.setText(self.bmf.labels[0x2f])
+
+
 
   def updateLEDS(self):
     """
@@ -750,7 +818,7 @@ class GUI(QtGui.QMainWindow):
      self.mainlayout.addWidget(self.log,5)
 
      self.__initLEDS()     
-     self.__initKP3()     
+     #self.__initKP3()     
      self.__initKP2()     
      self.__initKP1()     
      self.__initSerialPortSettings()     
