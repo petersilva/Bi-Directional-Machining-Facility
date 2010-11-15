@@ -1,4 +1,3 @@
-
 # -*- coding: utf-8 -*-
 
 """
@@ -17,6 +16,7 @@ import select
 import sys
 import random
 import os.path
+import struct
 
 FLAG_WRITE_FILE = 1 # simulation mode. (does writing to a file)
 FLAG_NO_ACK     = 2 # do not wait for acknowledgements (implied by 01)
@@ -35,13 +35,13 @@ FLAG_UPDATE_LOG     = 0x10
 BMF_BULK_RECORD_LENGTH = 24 
 
 keycodes = { 
-     #ey pad 1.                         
+     # key pad 1.                         
      u'10' : 0x10, u'11' : 0x11, u'12' : 0x12, u'13' : 0x13, 
      u'14' : 0x14, u'15' : 0x15, u'16' : 0x16, u'17' : 0x17, 
      u'18' : 0x18, u'19' : 0x19, u'1a' : 0x1a, u'1b' : 0x1b,        
      u'1c' : 0x1c, u'1d' : 0x1d, u'1b' : 0x1b, u'1f' : 0x1f, 
-     #ey pad 2.                         
-     u'20' : 0x20, u'22' : 0x22, u'22' : 0x22, u'23' : 0x23, 
+     # key pad 2.                         
+     u'20' : 0x20, u'21' : 0x21, u'22' : 0x22, u'23' : 0x23, 
      u'24' : 0x24, u'25' : 0x25, u'26' : 0x26, u'27' : 0x27, 
      u'28' : 0x28, u'29' : 0x29, u'2a' : 0x2a, u'2b' : 0x2b,        
      u'2c' : 0x2c, u'2d' : 0x2d, u'2e' : 0x2e, u'2f' : 0x2f, 
@@ -88,6 +88,8 @@ class bmf:
     perhaps
     use intel hex format to exchange binary data: https://launchpad.net/intelhex/
   """
+  def __bindOpCode(self,code,fun):
+    self.opCodeBindings[code] = [ binascii.hexlify(struct.pack('B',0x4f)), fun ]
 
   def __init__(self,dev,speed=57600,flags=0,msgcallback=None,display=None):
      """
@@ -102,6 +104,7 @@ class bmf:
 		08 - network client 'port=<host>:<port>' -> localhost:8888
 
      """
+     self.read_buffer=''
      self.speed = speed
      self.dev = dev
      self.flags = flags
@@ -118,22 +121,14 @@ class bmf:
                     '14', '15', '16', '17', 
                     '18', '19', '1a', '1b', 
                     '1c', '1d', '1e', '1f', 
-                    '20', '22', '22', '23', # keypad 2
+                    '20', '21', '22', '23', # keypad 2
                     '24', '25', '26', '27', 
                     '28', '29', '2a', '2b', 
                     '2c', '2d', '2e', '2f', 
-                    '', '', '', '',  # keypad 2
-                    '', '', '', '', 
-                    '', '', '', '',
-                    '', '', '', '',
-                    '', '', '', '', # keypad 3
-                    '', '', '', '',
-                    '', '', '', '',
-                    '', '', '', '',
-                    '', '', '', '',
-                    '', '', '', '',
-                    '', '', '', '',
-
+                    '30', '31', '32', '33', # keypad 3
+                    '34', '35', '36', '37', 
+                    '38', '39', '3a', '3b', 
+                    '3c', '3d', '3e', '3f', 
                     '', '', '', '' 
             	  ] 
 
@@ -145,7 +140,28 @@ class bmf:
         self.counter_display.append(None)
         i+=1
 
-     self.read_buffer = ""
+     self.opCodeBindings={}
+     i=0
+     while i < 255:
+        self.__bindOpCode(i, self.readcmd_undefined )
+        i+=1
+
+     self.__bindOpCode( 0x80, self.readcmd_enterBlockMode )
+     self.__bindOpCode( 0x3a, self.readcmd_rxIntelHexRecord)
+     self.__bindOpCode( 0x81, self.readcmd_displayString)
+     self.__bindOpCode( 0x82, self.readcmd_updateCounter)
+     self.__bindOpCode( 0x83, self.readcmd_response)
+     self.__bindOpCode( 0x84, self.readcmd_moveCounter)
+     self.__bindOpCode( 0x85, self.readcmd_updateLEDs)
+     self.__bindOpCode( 0x86, self.readcmd_setLabel)
+     self.__bindOpCode( 0x87, self.readcmd_pullFile)
+
+     i=0x90
+     while i < 0x9f:
+         self.__bindOpCode( i, self.readcmd_updateCounterByOpcode)
+         i+=1
+
+     self.__bindOpCode( 0xaa, self.readcmd_invokeEmulator)
 
      if self.flags & FLAG_WRITE_FILE:
         self.msgcallback( "simulation by writing to: %s" % dev )
@@ -316,6 +332,192 @@ class bmf:
         if callback != None:
             callback()
 
+  def readcmd_enterBlockMode(self,cmd):
+     """
+        puts FSM in block transfer mode, ready to rx intel hex records.
+     """
+     
+     filename=self.__readline()
+     filename=filename.strip()
+     if filename != "":
+           self.writefilename=filename
+     else:
+           self.writefilename="bmf_dump_%s" % time.strftime("%Y%m%d_%H%M%S", 
+                time.localtime(time.time()))
+
+     self.writefile=open(self.writefilename,'w')
+     print "writefilename: %s" % self.writefilename
+     #self.writecmd("%c%c%c" % ( 0x83, 0, 0x0a )) # ack the line.
+     self.file_length=0
+     return 0
+
+  def readcmd_rxIntelHexRecord(self,cmd):
+     """
+        receive an intel hex block (assume already in block transfer mode.)
+     """
+     line = self.__readn(23)  # read the line
+     datalen=ord(line[0])
+     self.file_length += datalen
+
+     #validate checksum.
+     sum=chksum(line[0:datalen+4])
+     if sum == ord(line[datalen+4]) :
+         ack=0
+     else:
+         ack=1
+        
+     self.writecmd("%c%c%c" % ( 0x83, ack, 0x0a )) # ack the line.
+     print  "rx blk, file_length=%d, len=%d, ack=%d, sum=%d vs. pkt:%d" \
+            %  ( self.file_length, datalen, ack, sum, ord(line[datalen+4]) )
+
+     if ack == 0: #line is good, write it out.
+        #FIXME:  if no file open, behavious undefined...
+        #write data to currently open write file.
+        if self.writefilename[-4:].lower() == '.hex':
+           record_to_write = FRAME_TYPE_HEX + \
+                     binascii.hexlify(line[0:datalen+5]).upper() + "\n"
+        else:
+           record_to_write = line[4:datalen+4]
+
+        self.writefile.write( record_to_write )
+
+        if datalen==0:
+           self.writefile.close()
+        
+     return 0
+
+  def readcmd_displayString(self,cmd):
+        coords = self.__readn(2)
+        if (len(coords) < 2):
+	    self.resync()
+	    return
+
+        s = self.__readline().decode("utf-8")       
+        x = 0x7f & ord(coords[0])
+        y = 0x7f & ord(coords[1])
+        if (x == 0x7f) and (y == 0x7f):
+            self.display.clear()
+            self.msgcallback( "clear screen" )
+        else:
+            self.display.writeStringXY(x,y,s[0:-1])
+
+        self.updateReceived= self.updateReceived | FLAG_UPDATE_STRING
+
+  def readcmd_updateCounter(self,cmd):
+        buf=self.__readn(4)
+        counter_index = ord(buf[0])
+        counter_value  = ord(buf[1])*256+ord(buf[2])
+        self.counters[counter_index] = counter_value       
+        if self.counter_display[counter_index] != None:
+            self.display.writeStringXY(
+                self.counter_display[counter_index][0],
+                self.counter_display[counter_index][1],
+                "%02d.%03d" % ( counter_value / 1000 , counter_value % 1000 ))
+
+        self.updateReceived= self.updateReceived | FLAG_UPDATE_COUNTER
+        if ord(buf[3]) != TRIGGER_INTERRUPT:
+           self.msgcallback( 
+             "malformed counter update. last char is: 0x%02x " % ord(buf[3]) )
+        return 0
+
+  def readcmd_response(self,cmd):
+        buf=self.__readn(2)
+        if ord(buf[1]) != 0x0a:
+            self.msgcallback( "no line feed! response corrupted" )
+            return 2
+        if ord(buf[0]) == 0x00:
+            self.msgcallback( "acknowledged!" )
+            return 0  # command succeeded.
+        if ord(buf[0]) == 0x01: # blockmode resend current binrec
+            self.writecmd(self.binrec)
+            self.last_command_message="resent."
+            self.msgcallback( "nack! resending block" )
+            return self.readcmd(True)
+        else: # undefined error 
+            self.msgcallback( "error %d: %s" % 
+                       (ord(buf[0]), self.last_command_message ) )
+            return ord(buf[0])
+
+  def readcmd_moveCounter(self,cmd):
+        # receipt from sendCounterXY 
+
+        counter_index=ord(self.__readn()) &0x0f
+        coords = self.__readn(2)
+        self.__readline()
+         
+        x = 0x7f & ord(coords[0])
+        y = 0x7f & ord(coords[1])
+
+        if (x == 0x7f) and (y == 0x7f):
+            self.counter_display[counter_index] = None
+            self.msgcallback( "stop counter %d display" % counter_index )
+        else:
+            self.msgcallback( "show counter %d @ %d,%d" % (counter_index,x,y))
+            self.counter_display[counter_index] = ( x, y )
+        return 0
+
+  def readcmd_updateLEDs(self,cmd):
+        buf=self.__readn(2)
+        self.leds=ord(buf[0])
+        self.updateReceived= self.updateReceived | FLAG_UPDATE_LEDS
+
+        if ord(buf[1]) != TRIGGER_INTERRUPT:
+           self.msgcallback( 
+             "malformed LED update. cmd=0x%02x, last char is: 0x%02x " % (cmd,ord(buf[1])) )
+        return 0
+
+  def readcmd_setLabel(self,cmd):
+        lbl_index=ord(self.__readn()) 
+        self.labels[lbl_index] = self.__readline().rstrip().decode("utf-8") 
+        self.updateReceived= self.updateReceived | FLAG_UPDATE_LABELS
+        if 0x10 <= lbl_index <= 0x30 :
+            keycodes[ self.labels[lbl_index] ] = lbl_index
+        return 0
+
+  def readcmd_pullFile(self,cmd):
+        buf=self.__readn(4)
+        start  = ord(buf[0])*256+ord(buf[1])
+        mxlen  = ord(buf[2])*256+ord(buf[3])
+        filename=self.__readline().rstrip()
+        if filename[-4:].tolower() == '.hex':
+           self.sendbulkhex(filename)
+        else:
+           self.sendbulkbin(filename,start,mxlen)
+        return 0
+
+  def readcmd_updateCounterByOpcode(self,cmd):
+        # receipt from sendCounterUpdate 
+        buf=self.__readn(3)
+        counter_index = cmd & 0x0f
+        counter_value  = ord(buf[0])*256+ord(buf[1])
+        #self.msgcallback( "counter[%d]: %d" % (counter_index,counter_value) )
+        self.counters[counter_index] = counter_value       
+
+        if self.counter_display[counter_index] != None:
+            self.display.writeStringXY(
+                self.counter_display[counter_index][0],
+                self.counter_display[counter_index][1],
+                "%02d.%03d" % ( counter_value / 1000 , counter_value % 1000 ))
+
+        self.updateReceived=self.updateReceived | FLAG_UPDATE_COUNTER
+
+        if ord(buf[2]) != TRIGGER_INTERRUPT:
+           self.msgcallback( 
+             "malformed counter update. cmd=0x%02x, last char is: 0x%02x " % (cmd,ord(buf[2])) )
+        return 0
+
+  def readcmd_invokeEmulator(self,cmd):
+
+        self.msgcallback("loop-back self-test: start.")
+        self.__readline()
+        self.sendTestCommands()
+        self.msgcallback("loop-back self-test: end")
+        return 0
+
+  def readcmd_undefined(self,cmd):
+        self.msgcallback( "Received Key: %02x reading rest of line" % cmd)
+        s = self.__readline()
+        return 0
 
   def readcmd(self,block=False):
      """
@@ -357,178 +559,53 @@ class bmf:
      cmd=ord(r)
      #print "cmd=%02x" % cmd
    
-     if cmd == 0x80: #enter blockmode, prepare to rx data.
-        filename=self.__readline()
-        filename=filename.strip()
-        if filename != "":
-           self.writefilename=filename
-        else:
-           self.writefilename="bmf_dump_%s" % time.strftime("%Y%m%d_%H%M%S", 
-                time.localtime(time.time()))
+     self.opCodeBindings[cmd][1](cmd)
 
-        self.writefile=open(self.writefilename,'w')
-        print "writefilename: %s" % self.writefilename
-        #self.writecmd("%c%c%c" % ( 0x83, 0, 0x0a )) # ack the line.
-        self.file_length=0
-        return 0
+
+     return
+
+     if cmd == 0x80: #enter blockmode, prepare to rx data.
+        return self.readcmd_enterBlockMode(cmd)
      elif cmd == 0x0a: # currupted, resync in prog... but next will be good...
         return 0
 
      elif cmd == 0x3a : # receive an intel hex block (24 chars.)
-        line = self.__readn(23)  # read the line
-        datalen=ord(line[0])
-        self.file_length += datalen
-
-        #validate checksum.
-        sum=chksum(line[0:datalen+4])
-        if sum == ord(line[datalen+4]) :
-            ack=0
-        else:
-            ack=1
-        
-        self.writecmd("%c%c%c" % ( 0x83, ack, 0x0a )) # ack the line.
-        print  "rx blk, file_length=%d, len=%d, ack=%d, sum=%d vs. pkt:%d" \
-               %  ( self.file_length, datalen, ack, sum, ord(line[datalen+4]) )
-
-        if ack == 0: #line is good, write it out.
-           #FIXME:  if no file open, behavious undefined...
-           #write data to currently open write file.
-           if self.writefilename[-4:].lower() == '.hex':
-              record_to_write = FRAME_TYPE_HEX + \
-                        binascii.hexlify(line[0:datalen+5]).upper() + "\n"
-           else:
-              record_to_write = line[4:datalen+4]
-
-           self.writefile.write( record_to_write )
-
-           if datalen==0:
-              self.writefile.close()
-        
-        return 0
+        return self.readcmd_rxIntelHexRecord(cmd)
 
      elif (cmd == 0x81): # display character string
-        coords = self.__readn(2)
-        if (len(coords) < 2):
-	    self.resync()
-	    return
+        return self.readcmd_displayString(cmd)
 
-        s = self.__readline()       
-        x = 0x7f & ord(coords[0])
-        y = 0x7f & ord(coords[1])
-        if (x == 0x7f) and (y == 0x7f):
-            self.display.clear()
-            self.msgcallback( "clear screen" )
-        else:
-            self.display.writeStringXY(x,y,s[0:-1])
-
-
-        self.updateReceived= self.updateReceived | FLAG_UPDATE_STRING
-        return 0 
      elif cmd == 0x82: # update 16-bit Counter
-        buf=self.__readn(4)
-        counter_index = ord(buf[0])
-        counter_value  = ord(buf[1])*256+ord(buf[2])
-        self.counters[counter_index] = counter_value       
-        if self.counter_display[counter_index] != None:
-            self.display.writeStringXY(
-                self.counter_display[counter_index][0],
-                self.counter_display[counter_index][1],
-                "%02d.%03d" % ( counter_value / 1000 , counter_value % 1000 ))
+        return self.readcmd_updateCounter(cmd)
 
-        self.updateReceived= self.updateReceived | FLAG_UPDATE_COUNTER
-        if ord(buf[3]) != TRIGGER_INTERRUPT:
-           self.msgcallback( 
-             "malformed counter update. last char is: 0x%02x " % ord(buf[3]) )
-        return 0
+
      elif cmd == 0x83: # response status from last command received.
-        buf=self.__readn(2)
-        if ord(buf[1]) != 0x0a:
-            self.msgcallback( "no line feed! response corrupted" )
-            return 2
-        if ord(buf[0]) == 0x00:
-            self.msgcallback( "acknowledged!" )
-            return 0  # command succeeded.
-        if ord(buf[0]) == 0x01: # blockmode resend current binrec
-            self.writecmd(self.binrec)
-            self.last_command_message="resent."
-            self.msgcallback( "nack! resending block" )
-            return self.readcmd(True)
-        else: # undefined error 
-            self.msgcallback( "error %d: %s" % 
-                       (ord(buf[0]), self.last_command_message ) )
-            return ord(buf[0])
+        return self.readcmd_response(cmd)
+
 
      elif cmd == 0x84: # position 16-bit Counter
-        # receipt from sendCounterXY 
-
-        counter_index=ord(self.__readn()) &0x0f
-        coords = self.__readn(2)
-        self.__readline()
-         
-        x = 0x7f & ord(coords[0])
-        y = 0x7f & ord(coords[1])
-
-        if (x == 0x7f) and (y == 0x7f):
-            self.counter_display[counter_index] = None
-            self.msgcallback( "stop counter %d display" % counter_index )
-        else:
-            self.msgcallback( "show counter %d @ %d,%d" % (counter_index,x,y))
-            self.counter_display[counter_index] = ( x, y )
+        return self.readcmd_moveCounter(cmd)
 
      elif cmd == 0x85: # update LED's
-        buf=self.__readn(2)
-        self.leds=ord(buf[0])
-        self.updateReceived= self.updateReceived | FLAG_UPDATE_LEDS
-
-        if ord(buf[1]) != TRIGGER_INTERRUPT:
-           self.msgcallback( 
-             "malformed LED update. cmd=0x%02x, last char is: 0x%02x " % (cmd,ord(buf[1])) )
-
+        return self.readcmd_updateLEDs(cmd)
      elif cmd == 0x86: # update labels.
-        lbl_index=ord(self.__readn()) 
-        self.labels[lbl_index] = self.__readline().rstrip() 
-        self.updateReceived= self.updateReceived | FLAG_UPDATE_LABELS
-        if 0x10 <= lbl_index <= 0x30 :
-            self.keycodes[ self.labels[lbl_index] ] = lbl_index
+        return self.readcmd_setLabel(cmd)
 
      elif cmd == 0x87: # pull file.
-        buf=self.__readn(4)
-        start  = ord(buf[0])*256+ord(buf[1])
-        mxlen  = ord(buf[2])*256+ord(buf[3])
-        filename=self.__readline().rstrip()
-        if filename[-4:].tolower() == '.hex':
-           self.sendbulkhex(filename)
-        else:
-           self.sendbulkbin(filename,start,mxlen)
+        return self.readcmd_pullFile(cmd)
 
      elif 0x90 <= cmd <= 0x9f:   # per counter update opcodes.
-        # receipt from sendCounterUpdate 
-        buf=self.__readn(3)
-        counter_index = cmd & 0x0f
-        counter_value  = ord(buf[0])*256+ord(buf[1])
-        #self.msgcallback( "counter[%d]: %d" % (counter_index,counter_value) )
-        self.counters[counter_index] = counter_value       
-
-        if self.counter_display[counter_index] != None:
-            self.display.writeStringXY(
-                self.counter_display[counter_index][0],
-                self.counter_display[counter_index][1],
-                "%02d.%03d" % ( counter_value / 1000 , counter_value % 1000 ))
-
-        self.updateReceived=self.updateReceived | FLAG_UPDATE_COUNTER
-
-        if ord(buf[2]) != TRIGGER_INTERRUPT:
-           self.msgcallback( 
-             "malformed counter update. cmd=0x%02x, last char is: 0x%02x " % (cmd,ord(buf[2])) )
+        return self.readcmd_updateCounterByOpcode(cmd)
 
      elif cmd == 0xAA:  # TESTING OpCode drunken sailor...Alcaholics anonymous... 
-        self.msgcallback("loop-back self-test: start.")
-        self.__readline()
-        self.sendTestCommands()
-        self.msgcallback("loop-back self-test: end")
+        return self.readcmd_invokeEmulator(cmd)
+
+
+
+  def hoho(self,cmd):
 
      # Simulation of Z80, return movement keys with counter updates.
-     elif cmd ==113: # 'NW' 
+     if cmd ==113: # 'NW' 
         self.__go(-1,-1,0)
      elif cmd ==119: # 'N' 
         self.__go(0,-1,0)
@@ -621,7 +698,10 @@ class bmf:
          send a frame to display a string on the peer´s character display.
          (part of pseudo-Z80 emulation for testing only)
       """
-      self.writecmd( "%c%c%c%s\n" % ( 0x81, (x|0x80), (y|0x80), buf ))
+      #self.writecmd( "%c%c%c%s\n" % ( 0x81, (x|0x80), (y|0x80), buf ))
+      self.writecmd( 
+          struct.pack( "BBB", 0x81, (x|0x80), (y|0x80))
+          +  buf + struct.pack("B", TRIGGER_INTERRUPT ))
    
   def sendCounterUpdate(self,i,v):
       """
@@ -641,7 +721,9 @@ class bmf:
       """ change the label with index i, to the value l
          (part of pseudo-Z80 emulation for testing only)
       """
-      self.writecmd( "%c%c%s\n" % ( chr(0x86), chr(i), l ))
+      self.writecmd( struct.pack( "BB",  0x86, i) + l.encode("utf-8") +
+           struct.pack("B", TRIGGER_INTERRUPT ))
+
 
   def sendLEDs(self):
       """
@@ -833,6 +915,23 @@ class bmf:
      self.sendLabel(0,"Test Mode")
      self.sendLabel(1,"Running")
      self.sendLabel(2,"Complete")
+     self.sendLabel(0x20,'Ho!')
+     self.sendLabel(0x20,u'\u2196')
+     self.__bindOpCode( 0x20, lambda cmd : self.__go(-1,-1,0))
+     self.sendLabel(0x21,u'\u2191')
+     self.__bindOpCode( 0x21, lambda cmd : self.__go(0,-1,0))
+     self.sendLabel(0x22,u'\u2197')
+     self.__bindOpCode( 0x22, lambda cmd : self.__go(+1,-1,0))
+     self.sendLabel(0x24,u'\u2190')
+     self.__bindOpCode( 0x24, lambda cmd : self.__go(-1,0,0))
+     self.sendLabel(0x26,u'\u2192')
+     self.__bindOpCode( 0x26, lambda cmd : self.__go(1,0,0))
+     self.sendLabel(0x28,u'\u2199')
+     self.__bindOpCode( 0x28, lambda cmd : self.__go(-1,1,0))
+     self.sendLabel(0x29,u'\u2193')
+     self.__bindOpCode( 0x29, lambda cmd : self.__go(0,1,0))
+     self.sendLabel(0x2a,u'\u2198')
+     self.__bindOpCode( 0x2a, lambda cmd : self.__go(1,1,0))
      self.leds=0x03
      self.sendLEDs()
 

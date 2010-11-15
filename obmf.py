@@ -80,6 +80,10 @@ def operate_bmf(port=None,cmd="view",speed=38400,dbg=0):
       from bmf.GUI import GUI
      
       app = QtGui.QApplication(sys.argv)
+      #app.setStyle("windows")
+      #app.setStyle("macintosh")
+      #app.setStyle("plastique")
+      #app.setStyle("windowsxp")
       tb = GUI(b)
       tb.show()
       QtGui.qApp = app

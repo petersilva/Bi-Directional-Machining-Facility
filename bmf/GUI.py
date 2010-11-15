@@ -198,15 +198,16 @@ class GUI(QtGui.QMainWindow):
 
   def sendfile(self):
     """
-       GUI element to send file data to the BMF peer.  This is done using intel hex format binary transfers.
-       each intel hex record is limited 24 bytes long.  The maximum data payload is 16 bytes.
+
+       GUI element to send file data to the BMF peer.  This is done using intel hex format binary 
+       transfers.  Each intel hex record is limited 24 bytes long.  The maximum data payload is 16 bytes.
        frames are padded to the length using ASCII NUL's and a single ASCII LF for the last character.
 
-       if the filename chosen ends in .hex, then the file is read as an ASCII rendition of intel hex format, converted
-       into binary, and sent (assumed to be correctly formatted intel hex.)
+       If the filename chosen ends in .hex, then the file is read as an ASCII rendition of intel hex 
+       format, converted into binary, and sent (assumed to be correctly formatted intel hex.)
 
-       If the file chosen ends with some other suffix, it is read as binary data.  The user is prompted for a start
-       memory location, and then the data is send as chunks in intel-hex format.
+       If the file chosen ends with some other suffix, it is read as binary data.  The user is prompted 
+       for a start memory location, and then the data is send as chunks in intel-hex format.
        
     """
     filename = QtGui.QFileDialog.getOpenFileName(self, 
@@ -352,8 +353,9 @@ class GUI(QtGui.QMainWindow):
     self.kp2.k2e = self.__button(u'2e', self.kp2, self.__sendkey)
     kp2layout.addWidget(self.kp2.k2e,3,2)
 
-    self.kp2.k2f = self.__button(u'2f', self.kp2, self.__sendkey)
+    self.kp2.k2f = self.__button(u'2f', self.kp2, self.sendfile)
     kp2layout.addWidget(self.kp2.k2f,3,3)
+    self.bmf.labels[0x2f]='Send File'
 
     #self.tab.addTab(self.kp2,"Commands")
     self.addDockWidget(QtCore.Qt.BottomDockWidgetArea, self.kp2.dock)
@@ -711,6 +713,7 @@ class GUI(QtGui.QMainWindow):
     tstlayout.addWidget(self.tst.hexlabel,0,0)
     self.tst.hexedit = QtGui.QLineEdit()
     tstlayout.addWidget(self.tst.hexedit,0,1)
+    self.connect(self.tst.hexedit, QtCore.SIGNAL('returnPressed()'), self.__sendhex)
 
 
     self.tst.dt = self.__button('Send Hex', self.tst, self.__sendhex)
