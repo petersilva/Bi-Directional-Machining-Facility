@@ -179,7 +179,7 @@ class bmf:
      else:
 	self.msgcallback( "serial port: connecting to %s at %d" % 
 				(self.dev,speed) )
-        self.serial = serial.Serial(dev,baudrate=speed,timeout=None)
+        self.serial = serial.Serial(dev,baudrate=speed,timeout=None,rtscts=True)
 
 
 
