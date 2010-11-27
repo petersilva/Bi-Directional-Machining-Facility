@@ -110,6 +110,7 @@ class bmf:
      self.speed = speed
      self.dev = dev
      self.flags = flags
+     #self.flags = flags | FLAGS_TRACE
      self.msgcallback=msgcallback
      self.display=display
      self.updateReceived=0xff

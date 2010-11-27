@@ -20,17 +20,19 @@ TODO:
         -- add file name choice to Settings.
         -- good method of logfile name selection.
         -- maybe z80 will log too?
-  -- subtract Acks?  Do we need them?
-       -- Acks are not generated, current flag does nothing in app.
   -- have routine updates make radiobuttons symmetrical.
   -- have toggles stay depressed when appropriiate.
 
 
-Done:
+
+
+2010/11/27:
+  -- added "natural" flow control, requires an ack for each key press,
+     discards any keypresses received when last one not acked.
+  -- Added Trace function.
   -- added return binding for faster hex code send testing.
   -- bound 2f key to sendfile function (functionality lost in panel reset...)
   -- separate self-test function from normal stuff.
-
 
 2010/11/11:
   -- bugfixes to label setting, added utf-8 support for strings.

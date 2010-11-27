@@ -130,14 +130,14 @@ class GUI(QtGui.QMainWindow):
        return
 
     flags = 0 
-    if self.stg.sim.isChecked() : 
-        flags = flags | 1
+    if self.stg.trace.isChecked() : 
+        flags = flags | 0x10
     if self.stg.noack.isChecked(): 
-        flags = flags | 2
+        flags = flags | 0x02
     if self.stg.netsrv.isChecked():
-        flags = flags | 4
+        flags = flags | 0x04
     if self.stg.netcli.isChecked():
-        flags = flags | 8
+        flags = flags | 0x08
 
     self.bmf = bmf.bmf(str(self.stg.portselect.currentText()),
              speed=int(str(self.stg.bps.currentText())), 
@@ -447,17 +447,14 @@ class GUI(QtGui.QMainWindow):
     self.statusBar().showMessage(self.msg)
 
     # ensure radio button consistency.
-    if self.stg.sim.isChecked() : 
-       if not self.stg.noack.isChecked(): 
-           self.stg.noack.setChecked(True)
     if self.stg.netsrv.isChecked():
-       if self.stg.sim.isChecked() : 
-           self.stg.sim.setChecked(False)
+       if self.stg.trace.isChecked() : 
+           self.stg.trace.setChecked(False)
        if self.stg.netcli.isChecked():
            self.stg.netcli.setChecked(False)
     if self.stg.netcli.isChecked():
-       if self.stg.sim.isChecked() : 
-           self.stg.sim.setChecked(False)
+       if self.stg.trace.isChecked() : 
+           self.stg.trace.setChecked(False)
 
     duration=time.time()-gustart
     gui_update_total_time += (time.time()-gustart)
@@ -579,9 +576,9 @@ class GUI(QtGui.QMainWindow):
     stglayout.addWidget(self.stg.bps,1,2,1,3)
 
     # Flags
-    self.stg.sim = QtGui.QRadioButton('write file', self.stg)
-    self.stg.sim.setAutoExclusive(False)
-    stglayout.addWidget(self.stg.sim,2,0)
+    self.stg.trace = QtGui.QRadioButton('Trace', self.stg)
+    self.stg.trace.setAutoExclusive(False)
+    stglayout.addWidget(self.stg.trace,2,0)
     self.stg.noack = QtGui.QRadioButton('No Ack', self.stg)
     self.stg.noack.setAutoExclusive(False)
     stglayout.addWidget(self.stg.noack,2,1)
