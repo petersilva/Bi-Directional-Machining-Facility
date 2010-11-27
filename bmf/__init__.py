@@ -18,10 +18,11 @@ import random
 import os.path
 import struct
 
-FLAG_WRITE_FILE = 1 # simulation mode. (does writing to a file)
-FLAG_NO_ACK     = 2 # do not wait for acknowledgements (implied by 01)
-FLAG_NET_SERVER = 4 # network server 'port=<port>'  <port> -> tcpip port # 8888
-FLAG_NET_CLIENT = 8 # network client 'port=<host>:<port>' -> localhost:8888
+FLAG_WRITE_FILE = 0x01 # simulation mode. (does writing to a file)
+FLAG_NO_ACK     = 0x02 # do not wait for acknowledgements (implied by 01)
+FLAG_NET_SERVER = 0x04 # network server 'port=<port>'  <port> -> tcpip port # 8888
+FLAG_NET_CLIENT = 0x08 # network client 'port=<host>:<port>' -> localhost:8888
+FLAG_TRACE      = 0x10 # dump byte stream to log file for tracing...
 
 # Flag values for updateReceived...
 # if a new value rx'd from peer since the last UI update. (like a dirty bit)
@@ -104,6 +105,7 @@ class bmf:
 		08 - network client 'port=<host>:<port>' -> localhost:8888
 
      """
+     self.key_ack_pending=False
      self.read_buffer=''
      self.speed = speed
      self.dev = dev
@@ -146,6 +148,7 @@ class bmf:
         self.__bindOpCode(i, self.readcmd_undefined )
         i+=1
 
+     self.__bindOpCode( TRIGGER_INTERRUPT, self.readcmd_ignore )
      self.__bindOpCode( 0x80, self.readcmd_enterBlockMode )
      self.__bindOpCode( 0x3a, self.readcmd_rxIntelHexRecord)
      self.__bindOpCode( 0x81, self.readcmd_displayString)
@@ -257,7 +260,7 @@ class bmf:
      self.__readline()
      return
      
-  def __readn(self,nbytes=1):
+  def __readn(self,nbytes=1,noTrace=False):
      """
           read n bytes... blocking until you do...
 
@@ -287,17 +290,25 @@ class bmf:
 
      buf=self.read_buffer[0:nbytes]
      self.read_buffer = self.read_buffer[nbytes:]
+
+     if (self.flags & FLAG_TRACE) and not noTrace:
+         self.msgcallback( "TRACE Read: " + binascii.hexlify(buf) )
+
      return buf
 
 
   def __readline(self):
-     """ calls readn to read an entire line, returns the string, with the\n
+     """ calls readn to read an entire line, returns the string, with the
+         TRIGGER_INTERRUPT character as termination.
      """
      s=""
      c=' ' 
-     while c != '\n':
-          c=self.__readn()
+     while c != chr(TRIGGER_INTERRUPT):
+          c=self.__readn(1,True)
           s+=c
+
+     if self.flags & FLAG_TRACE:
+         self.msgcallback( "TRACE readline: " + binascii.hexlify(s) )
 
      return s
           
@@ -331,6 +342,13 @@ class bmf:
 	self.readcmd()
         if callback != None:
             callback()
+
+  def readcmd_ignore(self,cmd):
+     """
+          noticed receipt of extra line feeds,  default action was to skip the next command, which caused problems.
+          now just ignore the line feed, next char is next command.
+     """
+     return
 
   def readcmd_enterBlockMode(self,cmd):
      """
@@ -366,7 +384,6 @@ class bmf:
      else:
          ack=1
         
-     self.writecmd("%c%c%c" % ( 0x83, ack, 0x0a )) # ack the line.
      print  "rx blk, file_length=%d, len=%d, ack=%d, sum=%d vs. pkt:%d" \
             %  ( self.file_length, datalen, ack, sum, ord(line[datalen+4]) )
 
@@ -384,6 +401,7 @@ class bmf:
         if datalen==0:
            self.writefile.close()
         
+     self.writecmd("%c%c%c" % ( 0x83, ack, TRIGGER_INTERRUPT )) # ack the line.
      return 0
 
   def readcmd_displayString(self,cmd):
@@ -421,6 +439,8 @@ class bmf:
         return 0
 
   def readcmd_response(self,cmd):
+        print "readcmd_response... catching Ack!"
+        self.key_ack_pending=False
         buf=self.__readn(2)
         if ord(buf[1]) != 0x0a:
             self.msgcallback( "no line feed! response corrupted" )
@@ -570,6 +590,9 @@ class bmf:
 
        silent on success, otherwise, post given error message.
      """
+     if self.flags & FLAG_TRACE:
+         self.msgcallback( "TRACE Write: " + binascii.hexlify(buf) )
+
      if self.flags & (FLAG_NET_CLIENT|FLAG_NET_SERVER):
          self.serial.send(buf)
      else:
@@ -614,6 +637,7 @@ class bmf:
             self.sendCounterUpdate(2,newval)
             self.counters[5]+=zoff
             self.sendCounterUpdate(5,self.counters[5])
+    self.sendAck()
 
   def __mark(self):
 
@@ -623,6 +647,10 @@ class bmf:
       self.sendCounterUpdate(4,self.counters[4])
       self.counters[5]=0
       self.sendCounterUpdate(5,self.counters[5])
+
+  def sendAck(self):
+      print "sending Ack!"
+      self.writecmd( "%c%c%c" % ( 0x83, FRAME_ACK_OK, TRIGGER_INTERRUPT  ))
 
 
   def sendStringXY(self,x,y,buf):
@@ -688,12 +716,18 @@ class bmf:
      """
         send a key to the peer.
      """
+     print "sendKey..."
+     if self.key_ack_pending:
+        return
+     print "not pending..."
+
      key=keycodes[str]
      #self.msgcallback( "%02x sent for key: +%s+" % ( key, str ) )
      self.writecmd(
           "%c%c" % ( key, TRIGGER_INTERRUPT ),
            "error on send of key: %s" % str
      )
+     self.key_ack_pending=True
      self.readpending()
 
   def sendbulkbinbuffer(self,data,filename,baseaddress=4000):
