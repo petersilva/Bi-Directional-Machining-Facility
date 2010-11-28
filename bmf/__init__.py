@@ -647,7 +647,7 @@ class bmf:
       self.sendCounterUpdate(5,self.counters[5])
 
   def sendAck(self):
-      if self.flags | FLAG_KEY_ACK :
+      if self.flags & FLAG_KEY_ACK :
          self.writecmd( 
             struct.pack( "BBB", 0x83, ord(FRAME_ACK_OK), TRIGGER_INTERRUPT ) 
          )
@@ -728,7 +728,7 @@ class bmf:
         struct.pack( "BB", key, TRIGGER_INTERRUPT ),
         "error on send of key: %s" % str
      )
-     if self.flags | FLAG_KEY_ACK :
+     if self.flags & FLAG_KEY_ACK :
         self.key_ack_pending=True
      self.readpending()
 
