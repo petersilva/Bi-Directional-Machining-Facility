@@ -19,7 +19,7 @@ import os.path
 import struct
 
 FLAG_WRITE_FILE = 0x01 # simulation mode. (does writing to a file)
-FLAG_NO_ACK     = 0x02 # do not wait for acknowledgements (implied by 01)
+FLAG_KEY_ACK    = 0x02 # after sending each key, wait for acknowledgements 
 FLAG_NET_SERVER = 0x04 # network server 'port=<port>'  <port> -> tcpip port # 8888
 FLAG_NET_CLIENT = 0x08 # network client 'port=<host>:<port>' -> localhost:8888
 FLAG_TRACE      = 0x10 # dump byte stream to log file for tracing...
@@ -170,7 +170,6 @@ class bmf:
      if self.flags & FLAG_WRITE_FILE:
         self.msgcallback( "simulation by writing to: %s" % dev )
         self.serial = open(dev,'w')
-        self.flags = flags | FLAG_NO_ACK   # append supression of ack's.
      elif self.flags & (FLAG_NET_SERVER|FLAG_NET_CLIENT):
        if self.flags & FLAG_NET_SERVER:
            self.sockserv()
@@ -648,7 +647,11 @@ class bmf:
       self.sendCounterUpdate(5,self.counters[5])
 
   def sendAck(self):
-      self.writecmd( struct.pack( "BBB", 0x83, ord(FRAME_ACK_OK), TRIGGER_INTERRUPT ) )
+      if self.flags | FLAG_KEY_ACK :
+         self.writecmd( 
+            struct.pack( "BBB", 0x83, ord(FRAME_ACK_OK), TRIGGER_INTERRUPT ) 
+         )
+     
 
 
   def sendStringXY(self,x,y,buf):
@@ -722,10 +725,11 @@ class bmf:
      key=keycodes[str]
      #self.msgcallback( "%02x sent for key: +%s+" % ( key, str ) )
      self.writecmd( 
-           struct.pack( "BB", key, TRIGGER_INTERRUPT ),
-           "error on send of key: %s" % str
+        struct.pack( "BB", key, TRIGGER_INTERRUPT ),
+        "error on send of key: %s" % str
      )
-     self.key_ack_pending=True
+     if self.flags | FLAG_KEY_ACK :
+        self.key_ack_pending=True
      self.readpending()
 
   def sendbulkbinbuffer(self,data,filename,baseaddress=4000):
