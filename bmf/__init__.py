@@ -110,7 +110,7 @@ class bmf:
      self.speed = speed
      self.dev = dev
      self.flags = flags
-     #self.flags = flags | FLAGS_TRACE
+     #self.flags = flags | FLAG_TRACE
      self.msgcallback=msgcallback
      self.display=display
      self.updateReceived=0xff
@@ -149,7 +149,7 @@ class bmf:
         self.__bindOpCode(i, self.readcmd_undefined )
         i+=1
 
-     self.__bindOpCode( TRIGGER_INTERRUPT, self.readcmd_ignore )
+     #self.__bindOpCode( TRIGGER_INTERRUPT, self.readcmd_ignore )
      self.__bindOpCode( 0x80, self.readcmd_enterBlockMode )
      self.__bindOpCode( 0x3a, self.readcmd_rxIntelHexRecord)
      self.__bindOpCode( 0x81, self.readcmd_displayString)
@@ -183,7 +183,7 @@ class bmf:
      else:
 	self.msgcallback( "serial port: connecting to %s at %d" % 
 				(self.dev,speed) )
-        self.serial = serial.Serial(dev,baudrate=speed,timeout=None,rtscts=True)
+        self.serial = serial.Serial(dev,baudrate=speed,timeout=None)
 
 
 
@@ -365,8 +365,6 @@ class bmf:
                 time.localtime(time.time()))
 
      self.writefile=open(self.writefilename,'w')
-     print "writefilename: %s" % self.writefilename
-     #self.writecmd("%c%c%c" % ( 0x83, 0, 0x0a )) # ack the line.
      self.file_length=0
      return 0
 
@@ -385,15 +383,15 @@ class bmf:
      else:
          ack=1
         
-     print  "rx blk, file_length=%d, len=%d, ack=%d, sum=%d vs. pkt:%d" \
-            %  ( self.file_length, datalen, ack, sum, ord(line[datalen+4]) )
+     #print  "rx blk, file_length=%d, len=%d, ack=%d, sum=%d vs. pkt:%d" \
+     #       %  ( self.file_length, datalen, ack, sum, ord(line[datalen+4]) )
 
      if ack == 0: #line is good, write it out.
         #FIXME:  if no file open, behavious undefined...
         #write data to currently open write file.
         if self.writefilename[-4:].lower() == '.hex':
            record_to_write = FRAME_TYPE_HEX + \
-                     binascii.hexlify(line[0:datalen+5]).upper() + "\n"
+             binascii.hexlify(line[0:datalen+5]).upper() + chr(TRIGGER_INTERRUPT)
         else:
            record_to_write = line[4:datalen+4]
 
@@ -440,7 +438,6 @@ class bmf:
         return 0
 
   def readcmd_response(self,cmd):
-        print "readcmd_response... catching Ack!"
         self.key_ack_pending=False
         buf=self.__readn(2)
         if ord(buf[1]) != 0x0a:
@@ -538,6 +535,7 @@ class bmf:
   def readcmd_undefined(self,cmd):
         self.msgcallback( "Received Key: %02x reading rest of line" % cmd)
         s = self.__readline()
+        self.sendAck()
         return 0
 
   def readcmd(self,block=False):
@@ -578,7 +576,6 @@ class bmf:
         #sys.exit() 
         return 0 # FIXME: on socket, polling not working?
      cmd=ord(r)
-     #print "cmd=%02x" % cmd
    
      self.opCodeBindings[cmd][1](cmd)
 
@@ -609,6 +606,7 @@ class bmf:
       adjusts counters and sends them to the peer.
  
     """
+    self.__readn()  # consume the end of line char...
     if xoff != 0:
          newval=self.counters[0]+xoff
          if (newval < 0 ) or (newval > 25000):
@@ -650,8 +648,7 @@ class bmf:
       self.sendCounterUpdate(5,self.counters[5])
 
   def sendAck(self):
-      print "sending Ack!"
-      self.writecmd( "%c%c%c" % ( 0x83, FRAME_ACK_OK, TRIGGER_INTERRUPT  ))
+      self.writecmd( struct.pack( "BBB", 0x83, ord(FRAME_ACK_OK), TRIGGER_INTERRUPT ) )
 
 
   def sendStringXY(self,x,y,buf):
@@ -659,7 +656,6 @@ class bmf:
          send a frame to display a string on the peer´s character display.
          (part of pseudo-Z80 emulation for testing only)
       """
-      #self.writecmd( "%c%c%c%s\n" % ( 0x81, (x|0x80), (y|0x80), buf ))
       self.writecmd( 
           struct.pack( "BBB", 0x81, (x|0x80), (y|0x80))
           +  buf + struct.pack("B", TRIGGER_INTERRUPT ))
@@ -669,14 +665,14 @@ class bmf:
          send a frame to initiate a counter update on the peer.
          (part of pseudo-Z80 emulation for testing only)
       """
-      self.writecmd( "%c%c%c\n" % ( chr(0x90|i), chr(v>>8), chr(v&0xff)  ))
+      self.writecmd( struct.pack( "BBBB", 0x90|i, v>>8, v&0xff, TRIGGER_INTERRUPT ) )
 
   def sendCounterXY(self,i,x,y):
       """
          Send a frame to position a counter on the peer´s character display.
          (part of pseudo-Z80 emulation for testing only)
       """
-      self.writecmd( "%c%c%c%c\n" % ( chr(0x84), i, (x|0x80), (y|0x80) ))
+      self.writecmd( struct.pack( "BBBBB", 0x84, i, (x|0x80), (y|0x80), TRIGGER_INTERRUPT ) )
 
   def sendLabel(self,i,l):
       """ change the label with index i, to the value l
@@ -692,7 +688,7 @@ class bmf:
          the value of self.leds is sent.  is a bitmask for the values of each one.
          (part of pseudo-Z80 emulation for testing only)
       """
-      self.writecmd( "%c%c\n" % ( 0x85, self.leds ) )
+      self.writecmd( struct.pack( "BBB", 0x85, self.leds, TRIGGER_INTERRUPT ) )
 
   def sendPullFile(self,filename,start,count):
       """
@@ -701,8 +697,11 @@ class bmf:
         the locations begin at start, and have count bytes sent.
         FIXME: not implemented yet.
       """
-      self.writecmd( "%c%c%c%c%c%s\n" % ( chr(0x87), chr(start>>8), chr(start&0xff),
-              chr(count>>8), chr(count&0xff), filename ))
+      self.writecmd( 
+          struct.pack( "BBBBB", 0x87, start>>8, start&0xff, count>>8, count&0xff)
+          +  filename + struct.pack("B", TRIGGER_INTERRUPT ))
+      #self.writecmd( "%c%c%c%c%c%s\n" % ( chr(0x87), chr(start>>8), chr(start&0xff),
+      #        chr(count>>8), chr(count&0xff), filename ))
       return
 
   def sendBulkStart(self,filename):
@@ -717,15 +716,13 @@ class bmf:
      """
         send a key to the peer.
      """
-     print "sendKey..."
      if self.key_ack_pending:
         return
-     print "not pending..."
 
      key=keycodes[str]
      #self.msgcallback( "%02x sent for key: +%s+" % ( key, str ) )
-     self.writecmd(
-          "%c%c" % ( key, TRIGGER_INTERRUPT ),
+     self.writecmd( 
+           struct.pack( "BB", key, TRIGGER_INTERRUPT ),
            "error on send of key: %s" % str
      )
      self.key_ack_pending=True
@@ -744,7 +741,6 @@ class bmf:
      """
 
      # switch to block transfer mode...
-     #self.sendKey('Block')
      self.sendBulkStart(filename)
 
      i=0
@@ -753,29 +749,25 @@ class bmf:
      addr=baseaddress
      while i < mx:
         self.msgcallback( "sendbulkbin looping: %d, mx:%d" % (i,mx) )
-        print "sendbulkbin looping: %d, mx:%d" % (i,mx) 
         last=i+chunksz
         if last >= mx:
           last=mx
 
         # build chunk of data for xfer...
         addr=baseaddress + i
-        #print "addr: %04x" % addr
         address1= (addr & 0xff00) >> 8
         address2= (addr & 0x00ff)
-        #print "last-i=%d, address1=%02x, address2=%02x" % \
-        #       (last-i,address1,address2)
         prefix = "%c%c%c\0" % (last-i,address1,address2)
         chunk = prefix + data[i:last]
 
         cksum=chksum(chunk)
-        print 'checksum: %d' % cksum
 
         # build binary record, including checksum and padding.
         self.binrec = FRAME_TYPE_HEX + chunk + chr(cksum) 
         padlen = BMF_BULK_RECORD_LENGTH - len(self.binrec) 
-        self.binrec += '\0' * (padlen - 1)
-        self.binrec += chr(TRIGGER_INTERRUPT) 
+        self.binrec += '\0' * padlen
+        #self.binrec += '\0' * (padlen - 1)
+        #self.binrec += chr(TRIGGER_INTERRUPT) 
 
         self.writecmd( self.binrec,
               "error between bytes %d and %d" % (i,last), True )
@@ -827,8 +819,9 @@ class bmf:
 
     # pad to 24 characters long with NULLS.
     padlen = BMF_BULK_RECORD_LENGTH - len(record_to_write) 
-    record_to_write += '\0' * (padlen-1)
-    record_to_write += chr(TRIGGER_INTERRUPT) 
+    record_to_write += '\0' * padlen
+    #record_to_write += '\0' * (padlen-1)
+    #record_to_write += chr(TRIGGER_INTERRUPT) 
 
     return( record_to_write )
 
@@ -858,7 +851,6 @@ class bmf:
          self.readcmd(block=True)
 
          byte_count += len(self.binrec) 
-         print 'bytes done: %d', byte_count
 
      #FIXME: pray hex file is well-formed so switch back to command 
      #       mode happens.

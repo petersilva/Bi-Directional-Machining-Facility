@@ -7,11 +7,18 @@ This document defines a protocol for communications over a serial line between
 a host running the bmf application and an embedded system to control a 
 bi-dimensional machining facility.  
 
-The host is a system running the application based on python and bindings for the QT development library. The application is developed on Linux and deployed on Windows. For the purpose of this document, the host is referred to as *the PC*.
+The host is a system running the application based on python and bindings for 
+the QT development library. The application is developed on Linux and deployed 
+on Windows. For the purpose of this document, the host is referred to 
+as *the PC*.
 
-The embedded system in the prototype is a Z80 family processor, with the peer implementation in assembly language for that processor.  The embedded system is therefore referred to as *the Z80*.
+The embedded system in the prototype is a Z80 family processor, with the peer 
+implementation in assembly language for that processor.  The embedded system 
+is therefore referred to as *the Z80*.
 
-The PC runs an application which displays a user interface, sends frames to the Z80, and receives frames as well.  The Z80 sends updates to counters and display on the PC.  The user interface features:
+The PC runs an application which displays a user interface, sends frames to 
+the Z80, and receives frames as well.  The Z80 sends updates to counters and 
+display on the PC.  The user interface features:
    -- Keys arranged on one or more keyboards.
    -- A dialog of counters
    -- A character-based display (using a fixed font, and fixed dimensions) for the z80 to display arbitrary information.
@@ -56,18 +63,15 @@ The key 0x0a must be avoided as it triggers end of line.
 
 
 Keys defined:
-  00 - 09 - 00 to 0-9 (Digits)
-     The numbers, for digit entry.
-  .......  NW - NE 
-     Directional keys for x,y movement control.  
-  .......  Up - Down
-     Directional key for z movement control.
+  10 - 1f -  keypad 1
+  20 - 2f -  keypad 2
+        -- labels can be set using the same indices.
 
 Other opcodes are:
 
   3A - Intel hex formated data record 
      Trigger send of data in 8-bit Intel Hex format, blocked by 24 byte frames.
-     if frame less than 24 bytes, it is padded with NULs.  a line feed is used for the last pad byte.
+     if frame less than 24 bytes, it is padded with NULs.  
      ':' <datacount> <AddrH> <AddrL> <type> <data> <chksum> <padding... >
 
      static last frame, triggers a return to command mode:
@@ -76,26 +80,26 @@ Other opcodes are:
   80 - Block Mode
      <name>,LF
   
-     Initiate a block mode transfer.  Data transfer uses intel hex format data records.
-     In this mode, transfers are synchronous.  Sender sends one intel hex record, 
-     awaits an acknowledgement.  if sender receives negative acknowledgement, sender 
-     should resend.
+     Initiate a block mode transfer.  Data transfer uses intel hex format data 
+     records.  In this mode, transfers are synchronous.  Sender sends one 
+     intel hex record, awaits an acknowledgement.  if sender receives negative 
+     acknowledgement, sender should resend.
 
-     <name>, is optional.  It can be used if the peer has a file system available, to write
-     the file.
+     <name>, is optional.  It can be used if the peer has a file system 
+     available, to write the file.
 
      FIXME: retransmission is an infinite loop...  limit it somehow?
      
   81 - Display characters
-      <x>, <y>, <string> LF
-      x - single byte column dimension bitwise ored with 0x80
-      y - single byte row dimension bitwise ored with 0x80
-      <string>  -- arbitrary sequence of printable ASCII characters
-      sequence ends with line feed.
+     <x>, <y>, <string> LF
+     x - single byte column dimension bitwise ored with 0x80
+     y - single byte row dimension bitwise ored with 0x80
+     <string>  -- arbitrary sequence of printable ASCII characters
+     sequence ends with line feed.
 
-      if x=ff and y=ff, then it means clear screen.
+     if x=ff and y=ff, then it means clear screen.
 
-      error conditions:
+     error conditions:
 	- dimensions off screen.
         - non-printable characters in string.
 
@@ -124,8 +128,9 @@ Other opcodes are:
   84 - Position Counter
      <idx>,<i>,<j>,LF
 
-     request that character display include the idx counter at the given position. 
-     future counter updates will cause a 6 character string update at that location.
+     request that character display include the idx counter at the 
+     given position.  Future counter updates will cause a 6 character 
+     string update at that location.
 
      encoding is similar to write string command.
 
@@ -151,9 +156,9 @@ Other opcodes are:
      transfer count, High, then low byte.
      String = filename
 
-     Send me the filenamed by the string.  If the file ends in .hex, then
-     use the addressing from the file.  Otherwise, use the given start address
-     when building the intel hex transfer records.
+     Send me the filenamed by the string.  If the file ends in .hex, 
+     then use the addressing from the file.  Otherwise, use the given 
+     start address when building the intel hex transfer records.
 
      peer is to respond with a 0x80 with the same filename followed by 
      a series of intel-hex encoded records of data from the named file.
@@ -164,8 +169,8 @@ Other opcodes are:
 
 
   AA - Alcaholics Anonymous...
-     drunken sailor mode, peer is to respond with a large number of screen and counter updates,
-     to demonstrate functionality.   
+     drunken sailor mode, peer is to respond with a large number of screen 
+     and counter updates, to demonstrate functionality.   
 
 
 Protocol Analysis
