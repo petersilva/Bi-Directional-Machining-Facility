@@ -37,12 +37,14 @@ def usage():
     -p / --port = "COM2:", or "/dev/ttyS0"
     -s / --speed = 38400 
     -l / --logfile = "bmf.log"
-    -D / --debug = <flags>    
+    -f / --flags = <flags>    
            flags:  1 - simulate: port is a write only file.
-		   2 - suppress/ignore acknowledgements
-                          (implied by 1)
+		   2 - require keys sent to be acknowledged.
                    4 - network server
 		   8 - network client
+                  16 - print TRACE output 
+                       (hexlification of every byte transferred)
+    -h / --help  -- print this usage information.
 
   command is one of:
         view  - start the keyboard GUI.
@@ -127,8 +129,8 @@ if __name__ == '__main__':
         speed=115200
         dbg=8
     
-    opts, args = getopt.getopt(sys.argv[1:],"f:p:s:V",[ 
-    "flags=", "f=", "port=", "speed=", "version" ])
+    opts, args = getopt.getopt(sys.argv[1:],"f:hp:s:V",[ 
+    "flags=", "f=", "help", "port=", "speed=", "version" ])
     
     for o, a in opts:
       if o in ( "-f", "--f", "--flags"):
@@ -141,7 +143,7 @@ if __name__ == '__main__':
          speed = int(a)
       elif o in ( "-V", "--version"):
          print "my version..."
-      else:
+      else:  # includes -h --help...
          usage()
          sys.exit()
 
