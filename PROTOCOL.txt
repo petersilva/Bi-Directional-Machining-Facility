@@ -104,16 +104,12 @@ Other opcodes are:
         - non-printable characters in string.
 
 
-  82 - General Set (16-bit) Counter - OBSOLETE - FIXME.
-     <Id>,<Hi>,<Lo>,LF
-     Id - one byte index of the counter whose value is to be set.
-     Hi - most significant byte of counter whose value is to be set.
-     Lo - least significant byte of counter whose value is to be set.
+  82 - Button State Change
+     <Id>,flags,LF
+     Id - one byte index of the button pressed.
+     00 - button release
+     01 - button set.
 
-    counters 0,1,2 are for the left column in the Counter Display.
-    counters 3,4,5 are for the right column in the Counter Display.
-    counters above 5 are not displayed unless programmed for the
-    character display.
 
   83 - Acknowledge last command received
      <status>, LF - completion status of last command received.
@@ -148,6 +144,8 @@ Other opcodes are:
                   Counter Display
               4-7 Column heading, then labels for three counters (0,1,2) 
               8-11 2nd column heading, labels for three counters (3,4,5)
+              10-1f - keypad 1 keys
+              20-2f - keypad 2 keys
 
   87 - Send Me - request z80 dump contents of memory.
      SH,SL,CH,CL,String,LF
@@ -156,7 +154,7 @@ Other opcodes are:
      transfer count, High, then low byte.
      String = filename
 
-     Send me the filenamed by the string.  If the file ends in .hex, 
+     Send me the file named by the string.  If the file ends in .hex, 
      then use the addressing from the file.  Otherwise, use the given 
      start address when building the intel hex transfer records.
 

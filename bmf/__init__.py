@@ -40,7 +40,7 @@ keycodes = {
      u'10' : 0x10, u'11' : 0x11, u'12' : 0x12, u'13' : 0x13, 
      u'14' : 0x14, u'15' : 0x15, u'16' : 0x16, u'17' : 0x17, 
      u'18' : 0x18, u'19' : 0x19, u'1a' : 0x1a, u'1b' : 0x1b,        
-     u'1c' : 0x1c, u'1d' : 0x1d, u'1b' : 0x1b, u'1f' : 0x1f, 
+     u'1c' : 0x1c, u'1d' : 0x1d, u'1e' : 0x1e, u'1f' : 0x1f, 
      # key pad 2.                         
      u'20' : 0x20, u'21' : 0x21, u'22' : 0x22, u'23' : 0x23, 
      u'24' : 0x24, u'25' : 0x25, u'26' : 0x26, u'27' : 0x27, 
@@ -92,7 +92,7 @@ class bmf:
   def __bindOpCode(self,code,fun):
     self.opCodeBindings[code] = [ binascii.hexlify(struct.pack('B',0x4f)), fun ]
 
-  def __init__(self,dev,speed=57600,flags=0,msgcallback=None,display=None):
+  def __init__(self,dev,speed=57600,flags=0,msgcallback=None,display=None,logfile="bmf.log"):
      """
 
        device = port to open. ("COM2:" or "/dev/ttyUSB0", etc...)
@@ -114,6 +114,7 @@ class bmf:
      self.msgcallback=msgcallback
      self.display=display
      self.updateReceived=0xff
+     self.logfilename=logfile
      self.leds=0                   # state of the LED indicators received via op-code 0x85
      # labels for LED indicators received via op-code 0x86, default settings...
      self.labels= [ 'Home XY', 'Step On', 'Coolant', 'Full Time',
@@ -153,7 +154,8 @@ class bmf:
      self.__bindOpCode( 0x80, self.readcmd_enterBlockMode )
      self.__bindOpCode( 0x3a, self.readcmd_rxIntelHexRecord)
      self.__bindOpCode( 0x81, self.readcmd_displayString)
-     self.__bindOpCode( 0x82, self.readcmd_updateCounter)
+     #self.__bindOpCode( 0x82, self.readcmd_updateCounter)
+     self.__bindOpCode( 0x82, self.readcmd_key)
      self.__bindOpCode( 0x83, self.readcmd_response)
      self.__bindOpCode( 0x84, self.readcmd_moveCounter)
      self.__bindOpCode( 0x85, self.readcmd_updateLEDs)
@@ -183,6 +185,8 @@ class bmf:
 	self.msgcallback( "serial port: connecting to %s at %d" % 
 				(self.dev,speed) )
         self.serial = serial.Serial(dev,baudrate=speed,timeout=None)
+        # h/w flow control: either  rtscts=True, or, dsrdtr=True
+        # do we need get/set(DTR|DSR|RTS|CTS) routines ? 
 
 
 
@@ -531,6 +535,12 @@ class bmf:
         self.msgcallback("loop-back self-test: end")
         return 0
 
+  def readcmd_key(self,cmd):
+        (keyc, evt, lf) = self.__readn(3)
+        key=ord(keyc)
+        print "key: %02x,%02x received\n" % ( key, ord(evt))  
+        self.opCodeBindings[key][1](key)
+
   def readcmd_undefined(self,cmd):
         self.msgcallback( "Received Key: %02x reading rest of line" % cmd)
         s = self.__readline()
@@ -715,7 +725,7 @@ class bmf:
      self.msgcallback(  "name: %s, basename: %s" % ( filename, os.path.basename(filename)))
      self.writecmd( "%c%s\n" % ( chr(0x80), os.path.basename(filename) ))
 
-  def sendKey(self,str):
+  def sendKey(self,str,evt):
      """
         send a key to the peer.
      """
@@ -723,9 +733,9 @@ class bmf:
         return
 
      key=keycodes[str]
-     #self.msgcallback( "%02x sent for key: +%s+" % ( key, str ) )
+     #self.msgcallback( "%02x,%02x sent for key: +%s+" % ( key, evt, str ) )
      self.writecmd( 
-        struct.pack( "BB", key, TRIGGER_INTERRUPT ),
+        struct.pack( "BBBB", 0x82, key, evt, TRIGGER_INTERRUPT ),
         "error on send of key: %s" % str
      )
      if self.flags & FLAG_KEY_ACK :
@@ -841,7 +851,6 @@ class bmf:
      """
 
      # switch to block transfer mode...
-     #self.sendKey('Block')
      self.sendBulkStart(filename)
      f=open(filename,'r')
      line_number=0
