@@ -119,14 +119,13 @@ if __name__ == '__main__':
     #    hardcoded defaults to make testing go quickly.
     #    would be nice to replace with a detection scan...
     #
+    speed=115200
     if platform.system() == "Windows":
         port="COM1"
-        speed=57600
         dbg=0
     else:
         # I test with a socket back to myself now...
         port='localhost:50007'
-        speed=115200
         dbg=8
     
     opts, args = getopt.getopt(sys.argv[1:],"f:hp:s:V",[ 

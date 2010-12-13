@@ -55,39 +55,28 @@ class GUI(QtGui.QMainWindow):
     """
     self.msg = msg
 
-  def __button( self, text, parent, pressAction, releaseAction=None ):
+  def __button( self, text, parent, pressAction):
     """
        define a standard button.
     """
     w = QtGui.QPushButton(text, parent)
-    w.setAutoRepeat(True)
+    w.setAutoRepeat(False)
     #w.setAutoRepeatDelay(2000)
     w.setAutoRepeatInterval(1000)
     self.connect(w, QtCore.SIGNAL('pressed()'), pressAction)
-    if releaseAction != None:
-       self.connect(w, QtCore.SIGNAL('released()'), releaseAction)
+    self.connect(w, QtCore.SIGNAL('released()'), pressAction)
 
     return(w)
 
 
-  def __sendKeyPress(self): 
+  def __sendKeyAction(self): 
     """
-       send a key stroke event to the peer. 
-    """
-    kk=QtCore.QObject.sender(self)
-    self.keyPressRepeat = self.keyPressRepeat + 1
-    self.bmf.sendKey(unicode(kk.text()),self.keyPressRepeat)
-    self.__logit( "%s keypress sent, pressed=%s,n=%d" % 
-          (kk.text(), kk.isDown(),self.keyPressRepeat) )
-
-  def __sendKeyRelease(self): 
-    """
-       send a key stroke event to the peer. 
+       send a key press event to the peer. 
     """
     kk=QtCore.QObject.sender(self)
-    self.bmf.sendKey(unicode(kk.text()),00)
-    self.__logit( "%s key release sent, pressed=%s" % (kk.text(), kk.isDown()) )
-    self.keyPressRepeat = 0
+    self.bmf.sendKey(unicode(kk.text()),kk.isDown())
+    self.__logit( "%s key action sent, pressed=%s" % 
+          (kk.text(), kk.isDown()) )
 
   def __sendhex(self):
     """
@@ -254,52 +243,52 @@ class GUI(QtGui.QMainWindow):
 
     kp1layout=QtGui.QGridLayout(self.kp1)
 
-    self.kp1.k10 = self.__button('1',self.kp1,self.__sendKeyPress,self.__sendKeyRelease)
+    self.kp1.k10 = self.__button('1',self.kp1,self.__sendKeyAction)
     kp1layout.addWidget(self.kp1.k10,0,0)
 
-    self.kp1.k11 = self.__button('2', self.kp1, self.__sendKeyPress,self.__sendKeyRelease)
+    self.kp1.k11 = self.__button('2', self.kp1, self.__sendKeyAction)
     kp1layout.addWidget(self.kp1.k11,0,1)
 
-    self.kp1.k12 = self.__button('3', self.kp1, self.__sendKeyPress,self.__sendKeyRelease)
+    self.kp1.k12 = self.__button('3', self.kp1, self.__sendKeyAction)
     kp1layout.addWidget(self.kp1.k12,0,2)
 
-    self.kp1.k13 = self.__button('4', self.kp1, self.__sendKeyPress,self.__sendKeyRelease)
+    self.kp1.k13 = self.__button('4', self.kp1, self.__sendKeyAction)
     kp1layout.addWidget(self.kp1.k13,0,3)
 
-    self.kp1.k14 = self.__button('5', self.kp1, self.__sendKeyPress,self.__sendKeyRelease)
+    self.kp1.k14 = self.__button('5', self.kp1, self.__sendKeyAction)
     kp1layout.addWidget(self.kp1.k14,1,0)
 
-    self.kp1.k15 = self.__button('6', self.kp1, self.__sendKeyPress,self.__sendKeyRelease)
+    self.kp1.k15 = self.__button('6', self.kp1, self.__sendKeyAction)
     kp1layout.addWidget(self.kp1.k15,1,1)
 
-    self.kp1.k16 = self.__button('7', self.kp1, self.__sendKeyPress,self.__sendKeyRelease)
+    self.kp1.k16 = self.__button('7', self.kp1, self.__sendKeyAction)
     kp1layout.addWidget(self.kp1.k16,1,2)
 
-    self.kp1.k17 = self.__button('8', self.kp1, self.__sendKeyPress,self.__sendKeyRelease)
+    self.kp1.k17 = self.__button('8', self.kp1, self.__sendKeyAction)
     kp1layout.addWidget(self.kp1.k17,1,3)
 
-    self.kp1.k18 = self.__button('9', self.kp1, self.__sendKeyPress,self.__sendKeyRelease)
+    self.kp1.k18 = self.__button('9', self.kp1, self.__sendKeyAction)
     kp1layout.addWidget(self.kp1.k18,3,0)
 
-    self.kp1.k19 = self.__button('0', self.kp1, self.__sendKeyPress,self.__sendKeyRelease)
+    self.kp1.k19 = self.__button('0', self.kp1, self.__sendKeyAction)
     kp1layout.addWidget(self.kp1.k19,3,1)
 
-    self.kp1.k1a = self.__button('.', self.kp1, self.__sendKeyPress,self.__sendKeyRelease)
+    self.kp1.k1a = self.__button('.', self.kp1, self.__sendKeyAction)
     kp1layout.addWidget(self.kp1.k1a,3,2)
 
-    self.kp1.k1b = self.__button('+/-', self.kp1, self.__sendKeyPress,self.__sendKeyRelease)
+    self.kp1.k1b = self.__button('+/-', self.kp1, self.__sendKeyAction)
     kp1layout.addWidget(self.kp1.k1b,3,3)
 
-    self.kp1.k1c = self.__button('1c', self.kp1, self.__sendKeyPress,self.__sendKeyRelease)
+    self.kp1.k1c = self.__button('1c', self.kp1, self.__sendKeyAction)
     kp1layout.addWidget(self.kp1.k1c,4,0)
 
-    self.kp1.k1d = self.__button('1d', self.kp1, self.__sendKeyPress,self.__sendKeyRelease)
+    self.kp1.k1d = self.__button('1d', self.kp1, self.__sendKeyAction)
     kp1layout.addWidget(self.kp1.k1d,4,1)
 
-    self.kp1.k1e = self.__button('1e', self.kp1, self.__sendKeyPress,self.__sendKeyRelease)
+    self.kp1.k1e = self.__button('1e', self.kp1, self.__sendKeyAction)
     kp1layout.addWidget(self.kp1.k1e,4,2)
 
-    self.kp1.k1f = self.__button('1f', self.kp1, self.__sendKeyPress,self.__sendKeyRelease)
+    self.kp1.k1f = self.__button('1f', self.kp1, self.__sendKeyAction)
     kp1layout.addWidget(self.kp1.k1f,4,3)
 
     #self.tab.addTab(self.kp1,"Numbers")
@@ -321,49 +310,49 @@ class GUI(QtGui.QMainWindow):
 
     kp2layout=QtGui.QGridLayout(self.kp2)
 
-    self.kp2.k20 = self.__button(u'\u2196', self.kp2, self.__sendKeyPress,self.__sendKeyRelease)
+    self.kp2.k20 = self.__button(u'\u2196', self.kp2, self.__sendKeyAction)
     kp2layout.addWidget(self.kp2.k20,0,0)
 
-    self.kp2.k21 = self.__button(u'\u2191', self.kp2, self.__sendKeyPress,self.__sendKeyRelease)
+    self.kp2.k21 = self.__button(u'\u2191', self.kp2, self.__sendKeyAction)
     kp2layout.addWidget(self.kp2.k21,0,1)
 
-    self.kp2.k22 = self.__button(u'\u2197', self.kp2, self.__sendKeyPress,self.__sendKeyRelease)
+    self.kp2.k22 = self.__button(u'\u2197', self.kp2, self.__sendKeyAction)
     kp2layout.addWidget(self.kp2.k22,0,2)
 
-    self.kp2.k23 = self.__button(u'\u2190', self.kp2, self.__sendKeyPress,self.__sendKeyRelease)
+    self.kp2.k23 = self.__button(u'\u2190', self.kp2, self.__sendKeyAction)
     kp2layout.addWidget(self.kp2.k23,0,3)
 
-    self.kp2.k24 = self.__button('Stop', self.kp2, self.__sendKeyPress,self.__sendKeyRelease )
+    self.kp2.k24 = self.__button('Stop', self.kp2, self.__sendKeyAction )
     kp2layout.addWidget(self.kp2.k24,1,0)
 
-    self.kp2.k25 = self.__button(u'\u2192', self.kp2, self.__sendKeyPress,self.__sendKeyRelease)
+    self.kp2.k25 = self.__button(u'\u2192', self.kp2, self.__sendKeyAction)
     kp2layout.addWidget(self.kp2.k25,1,1)
 
-    self.kp2.k26 = self.__button(u'\u2199', self.kp2, self.__sendKeyPress,self.__sendKeyRelease)
+    self.kp2.k26 = self.__button(u'\u2199', self.kp2, self.__sendKeyAction)
     kp2layout.addWidget(self.kp2.k26,1,2)
 
-    self.kp2.k27 = self.__button(u'\u2193', self.kp2, self.__sendKeyPress,self.__sendKeyRelease)
+    self.kp2.k27 = self.__button(u'\u2193', self.kp2, self.__sendKeyAction)
     kp2layout.addWidget(self.kp2.k27,1,3)
 
-    self.kp2.k28 = self.__button(u'\u2198', self.kp2, self.__sendKeyPress,self.__sendKeyRelease)
+    self.kp2.k28 = self.__button(u'\u2198', self.kp2, self.__sendKeyAction)
     kp2layout.addWidget(self.kp2.k28,2,0)
 
-    self.kp2.k29 = self.__button(u'\u2198', self.kp2, self.__sendKeyPress,self.__sendKeyRelease)
+    self.kp2.k29 = self.__button(u'\u2198', self.kp2, self.__sendKeyAction)
     kp2layout.addWidget(self.kp2.k29,2,1)
 
-    self.kp2.k2a = self.__button(u'2a', self.kp2, self.__sendKeyPress,self.__sendKeyRelease)
+    self.kp2.k2a = self.__button(u'2a', self.kp2, self.__sendKeyAction)
     kp2layout.addWidget(self.kp2.k2a,2,2)
 
-    self.kp2.k2b = self.__button(u'2b', self.kp2, self.__sendKeyPress,self.__sendKeyRelease)
+    self.kp2.k2b = self.__button(u'2b', self.kp2, self.__sendKeyAction)
     kp2layout.addWidget(self.kp2.k2b,2,3)
 
-    self.kp2.k2c = self.__button(u'2c', self.kp2, self.__sendKeyPress,self.__sendKeyRelease)
+    self.kp2.k2c = self.__button(u'2c', self.kp2, self.__sendKeyAction)
     kp2layout.addWidget(self.kp2.k2c,3,0)
 
-    self.kp2.k2d = self.__button(u'2d', self.kp2, self.__sendKeyPress,self.__sendKeyRelease)
+    self.kp2.k2d = self.__button(u'2d', self.kp2, self.__sendKeyAction)
     kp2layout.addWidget(self.kp2.k2d,3,1)
 
-    self.kp2.k2e = self.__button(u'2e', self.kp2, self.__sendKeyPress,self.__sendKeyRelease)
+    self.kp2.k2e = self.__button(u'2e', self.kp2, self.__sendKeyAction)
     kp2layout.addWidget(self.kp2.k2e,3,2)
 
     self.kp2.k2f = self.__button(u'2f', self.kp2, self.sendfile)
@@ -391,19 +380,19 @@ class GUI(QtGui.QMainWindow):
     kp2layout=QtGui.QGridLayout(self.kp3)
 
 
-    self.kp3.plus = self.__button('+', self.kp3, self.__sendKeyPress,self.__sendKeyRelease)
+    self.kp3.plus = self.__button('+', self.kp3, self.__sendKeyAction)
     kp2layout.addWidget(self.kp3.plus,0,0)
 
-    self.kp3.speed = self.__button('Speed', self.kp3, self.__sendKeyPress,self.__sendKeyRelease)
+    self.kp3.speed = self.__button('Speed', self.kp3, self.__sendKeyAction)
     kp2layout.addWidget(self.kp3.speed,0,1)
 
-    self.kp3.minus = self.__button('-', self.kp3, self.__sendKeyPress,self.__sendKeyRelease)
+    self.kp3.minus = self.__button('-', self.kp3, self.__sendKeyAction)
     kp2layout.addWidget(self.kp3.minus,0,2)
 
     self.kp3.hilo = self.__button('Hi/Lo', self.kp3, self.__sendToggleKey)
     kp2layout.addWidget(self.kp3.hilo,1,0)
 
-    self.kp3.origin = self.__button('Origin', self.kp3, self.__sendKeyPress,self.__sendKeyRelease)
+    self.kp3.origin = self.__button('Origin', self.kp3, self.__sendKeyAction)
     kp2layout.addWidget(self.kp3.origin,1,1)
 
     self.kp3.send = self.__button('Send', self.kp3, self.sendfile)
@@ -412,13 +401,13 @@ class GUI(QtGui.QMainWindow):
     self.kp3.ss = self.__button('Start/Stop', self.kp3, self.__sendToggleKey)
     kp2layout.addWidget(self.kp3.ss,2,0)
 
-    self.kp3.cd = self.__button( u'\u21e7', self.kp3, self.__sendKeyPress,self.__sendKeyRelease)
+    self.kp3.cd = self.__button( u'\u21e7', self.kp3, self.__sendKeyAction)
     kp2layout.addWidget(self.kp3.cd,2,0)
 
-    self.kp3.cd = self.__button( u'\u21e9', self.kp3, self.__sendKeyPress,self.__sendKeyRelease)
+    self.kp3.cd = self.__button( u'\u21e9', self.kp3, self.__sendKeyAction)
     kp2layout.addWidget(self.kp3.cd,2,1)
 
-    self.kp3.cd = self.__button('Mark', self.kp3, self.__sendKeyPress,self.__sendKeyRelease)
+    self.kp3.cd = self.__button('Mark', self.kp3, self.__sendKeyAction)
     kp2layout.addWidget(self.kp3.cd,2,2)
 
     #self.tab.addTab(self.kp3,"Commands")
@@ -789,7 +778,6 @@ class GUI(QtGui.QMainWindow):
 
      self.msg = "almost ready?"
      self.connected = (bmf != None)
-     self.keyPressRepeat=0
 
      exit = QtGui.QAction(QtGui.QIcon('icons/exit.png'), 'Exit', self)
 

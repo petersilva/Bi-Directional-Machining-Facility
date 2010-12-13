@@ -184,9 +184,10 @@ class bmf:
      else:
 	self.msgcallback( "serial port: connecting to %s at %d" % 
 				(self.dev,speed) )
-        self.serial = serial.Serial(dev,baudrate=speed,timeout=None)
-        # h/w flow control: either  rtscts=True, or, dsrdtr=True
-        # do we need get/set(DTR|DSR|RTS|CTS) routines ? 
+        self.serial = serial.Serial(dev, baudrate=speed, 
+                rtscts=False, timeout=10, writeTimeout=10 )
+        # http://pyserial.sourceforge.net/pyserial_api.html
+        # with timeouts set, application should never hang.
 
 
 
@@ -508,7 +509,7 @@ class bmf:
 
   def readcmd_updateCounterByOpcode(self,cmd):
         # receipt from sendCounterUpdate 
-        buf=self.__readn(3)
+        buf=self.__readn(2)
         counter_index = cmd & 0x0f
         counter_value  = ord(buf[0])*256+ord(buf[1])
         #self.msgcallback( "counter[%d]: %d" % (counter_index,counter_value) )
@@ -522,9 +523,6 @@ class bmf:
 
         self.updateReceived=self.updateReceived | FLAG_UPDATE_COUNTER
 
-        if ord(buf[2]) != TRIGGER_INTERRUPT:
-           self.msgcallback( 
-             "malformed counter update. cmd=0x%02x, last char is: 0x%02x " % (cmd,ord(buf[2])) )
         return 0
 
   def readcmd_invokeEmulator(self,cmd):
@@ -542,8 +540,8 @@ class bmf:
         self.opCodeBindings[key][1](key)
 
   def readcmd_undefined(self,cmd):
-        self.msgcallback( "Received Key: %02x reading rest of line" % cmd)
-        s = self.__readline()
+        self.msgcallback( "Received undefined: %02x " % cmd)
+        #s = self.__readline()
         self.sendAck()
         return 0
 
@@ -678,7 +676,7 @@ class bmf:
          send a frame to initiate a counter update on the peer.
          (part of pseudo-Z80 emulation for testing only)
       """
-      self.writecmd( struct.pack( "BBBB", 0x90|i, v>>8, v&0xff, TRIGGER_INTERRUPT ) )
+      self.writecmd( struct.pack( "BBB", 0x90|i, v>>8, v&0xff ) )
 
   def sendCounterXY(self,i,x,y):
       """

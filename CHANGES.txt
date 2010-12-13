@@ -4,11 +4,7 @@ WORKING ON:
 
 TODO:
 
-  -- implement new opcode 82.
   -- save keyboard positions and settings.
-  -- variable interval...
-       auto repeat slow at first...
-       then faster later.
   -- declarative UI? or CSS or ...
   -- Align Right labels...
   -- Replace literal op-codes with consants OC_
@@ -27,7 +23,12 @@ TODO:
   -- have routine updates make radiobuttons symmetrical.
   -- have toggles stay depressed when appropriiate.
 
-
+done:
+  -- implement new opcode 82.
+  -- default serial baudrate now 115200 (embedded system updated.)
+  -- options for flow control (still off) included in code.
+  -- removed 0a from counter update opcode.
+  -- simplified key event processing (single routine replaces two)
 
 
 2010/11/28:
