@@ -55,7 +55,7 @@ class GUI(QtGui.QMainWindow):
     """
     self.msg = msg
 
-  def __button( self, text, parent, pressAction):
+  def __button( self, text, parent, pressAction, releaseToo=True):
     """
        define a standard button.
     """
@@ -64,7 +64,8 @@ class GUI(QtGui.QMainWindow):
     #w.setAutoRepeatDelay(2000)
     w.setAutoRepeatInterval(1000)
     self.connect(w, QtCore.SIGNAL('pressed()'), pressAction)
-    self.connect(w, QtCore.SIGNAL('released()'), pressAction)
+    if releaseToo :
+       self.connect(w, QtCore.SIGNAL('released()'), pressAction)
 
     return(w)
 
@@ -201,15 +202,19 @@ class GUI(QtGui.QMainWindow):
   def sendfile(self):
     """
 
-       GUI element to send file data to the BMF peer.  This is done using intel hex format binary 
-       transfers.  Each intel hex record is limited 24 bytes long.  The maximum data payload is 16 bytes.
-       frames are padded to the length using ASCII NUL's and a single ASCII LF for the last character.
+       GUI element to send file data to the BMF peer.  This is done using 
+       intel hex format binary transfers.  Each intel hex record is limited 
+       24 bytes long.  The maximum data payload is 16 bytes.  Frames are 
+       padded to the length using ASCII NUL's and a single ASCII LF for 
+       the last character.
 
-       If the filename chosen ends in .hex, then the file is read as an ASCII rendition of intel hex 
-       format, converted into binary, and sent (assumed to be correctly formatted intel hex.)
+       If the filename chosen ends in .hex, then the file is read as an ASCII 
+       rendition of intel hex format, converted into binary, and sent (assumed 
+       to be correctly formatted intel hex.)
 
-       If the file chosen ends with some other suffix, it is read as binary data.  The user is prompted 
-       for a start memory location, and then the data is send as chunks in intel-hex format.
+       If the file chosen ends with some other suffix, it is read as binary 
+       data.  The user is prompted for a start memory location, and then the 
+       data is send as chunks in intel-hex format.
        
     """
     filename = QtGui.QFileDialog.getOpenFileName(self, 
@@ -355,7 +360,7 @@ class GUI(QtGui.QMainWindow):
     self.kp2.k2e = self.__button(u'2e', self.kp2, self.__sendKeyAction)
     kp2layout.addWidget(self.kp2.k2e,3,2)
 
-    self.kp2.k2f = self.__button(u'2f', self.kp2, self.sendfile)
+    self.kp2.k2f = self.__button(u'2f', self.kp2, self.sendfile, False)
     kp2layout.addWidget(self.kp2.k2f,3,3)
     self.bmf.labels[0x2f]='Send File'
 
@@ -591,11 +596,11 @@ class GUI(QtGui.QMainWindow):
     self.stg.netcli.setAutoExclusive(False)
     stglayout.addWidget(self.stg.netcli,2,3)
 
-    self.stg.connect = self.__button('Connect', self.stg, self.__connect)
+    self.stg.connect = self.__button('Connect', self.stg, self.__connect, False )
     stglayout.addWidget(self.stg.connect,5,0,1,2)
     self.stg.connect.setAutoRepeat(False)
 
-    self.stg.disconnect = self.__button('DisConnect', self.stg, self.__disconnect)
+    self.stg.disconnect = self.__button('DisConnect', self.stg, self.__disconnect, False )
     stglayout.addWidget(self.stg.disconnect,5,2,1,2)
     self.stg.disconnect.setAutoRepeat(False)
 
@@ -715,13 +720,13 @@ class GUI(QtGui.QMainWindow):
     self.connect(self.tst.hexedit, QtCore.SIGNAL('returnPressed()'), self.__sendhex)
 
 
-    self.tst.dt = self.__button('Send Hex', self.tst, self.__sendhex)
+    self.tst.dt = self.__button('Send Hex', self.tst, self.__sendhex, False )
     tstlayout.addWidget(self.tst.dt,1,0)
 
-    self.tst.dt = self.__button('DisplayTest', self.tst, self.exercise)
+    self.tst.dt = self.__button('DisplayTest', self.tst, self.exercise, False )
     tstlayout.addWidget(self.tst.dt,2,0)
 
-    self.tst.dc = self.__button('Clear', self.tst, self.__clear)
+    self.tst.dc = self.__button('Clear', self.tst, self.__clear, False )
     tstlayout.addWidget(self.tst.dc,2,1)
 
     #self.tab.addTab(self.tst,"Testing")
@@ -730,6 +735,12 @@ class GUI(QtGui.QMainWindow):
     self.tst.dock.hide()
 
 
+
+  def __save( self ):
+     state = self.saveState()
+     statefile = open('obmf.sav', 'w')
+     statefile.write(state)
+     statefile.close()
 
   def __exit( self ):
      self.__disconnect()
@@ -825,6 +836,13 @@ class GUI(QtGui.QMainWindow):
      self.__initKP1()     
      self.__initSerialPortSettings()     
      self.__initTesting()     
+
+     save = QtGui.QAction(QtGui.QIcon('icons/exit.png'), 'Exit', self)
+     save.setShortcut('Ctrl+Q')
+     save.setStatusTip('Exit application')
+     self.viewMenu.addAction(save)
+     self.connect(save, QtCore.SIGNAL('triggered()'), self.__save)
+
    
      #self.show()
      self.setCentralWidget(self.charDisplayWindow)

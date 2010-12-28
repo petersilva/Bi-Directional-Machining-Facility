@@ -370,6 +370,7 @@ class bmf:
 
      self.writefile=open(self.writefilename,'w')
      self.file_length=0
+     self.sendAck(unconditional=True)
      return 0
 
   def readcmd_rxIntelHexRecord(self,cmd):
@@ -654,8 +655,8 @@ class bmf:
       self.counters[5]=0
       self.sendCounterUpdate(5,self.counters[5])
 
-  def sendAck(self):
-      if self.flags & FLAG_KEY_ACK :
+  def sendAck(self,unconditional=False):
+      if unconditional or ( self.flags & FLAG_KEY_ACK ) :
          self.writecmd( 
             struct.pack( "BBB", 0x83, ord(FRAME_ACK_OK), TRIGGER_INTERRUPT ) 
          )
@@ -722,6 +723,7 @@ class bmf:
      """
      self.msgcallback(  "name: %s, basename: %s" % ( filename, os.path.basename(filename)))
      self.writecmd( "%c%s\n" % ( chr(0x80), os.path.basename(filename) ))
+     self.readcmd(block=True) # wait for an ack...
 
   def sendKey(self,str,evt):
      """

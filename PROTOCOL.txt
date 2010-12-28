@@ -49,23 +49,6 @@ In some cases, LF may be present in the middle of the frame, but these cases are
 
 Opcodes:
 
-For most keys presented on the keyboard, there is an separate opcode which is sent by the PC to the Z80.  
-format of a key frame::
-
-  Send:
-  <Key> 0A 
-        Send the key to the Z80.  Key is a single byte, followed by a line feed.
-
-All of these keys must be < 0x80.
-
-The key 0x0a must be avoided as it triggers end of line.
-
-
-
-Keys defined:
-  10 - 1f -  keypad 1
-  20 - 2f -  keypad 2
-        -- labels can be set using the same indices.
 
 Other opcodes are:
 
@@ -110,6 +93,10 @@ Other opcodes are:
      00 - button release
      01 - button set.
 
+     Key ID's defined:
+       10 - 1f -  keypad 1
+       20 - 2f -  keypad 2
+             -- labels can be set using the same indices.
 
   83 - Acknowledge last command received
      <status>, LF - completion status of last command received.
@@ -163,7 +150,7 @@ Other opcodes are:
      initial destination address of data given by Start.
 
   90 -> 9f - update counters 0 through f.
-     <Hi>,<Lo>,LF
+     <Hi>,<Lo>
 
 
   AA - Alcaholics Anonymous...
