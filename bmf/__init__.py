@@ -109,7 +109,11 @@ class bmf:
      self.read_buffer=''
      self.speed = speed
      self.dev = dev
-     self.flags = flags
+     if flags == None:
+       self.flags = 0
+     else:
+       self.flags = flags
+
      #self.flags = flags | FLAG_TRACE
      self.msgcallback=msgcallback
      self.display=display
@@ -168,14 +172,20 @@ class bmf:
          i+=1
 
      self.__bindOpCode( 0xaa, self.readcmd_invokeEmulator)
+     if self.dev != None:
+        self.connect()
 
+      
+
+  def connect(self):
+     self.msgcallback("self.flags=%d" % self.flags)
      if self.flags & FLAG_WRITE_FILE:
         self.msgcallback( "simulation by writing to: %s" % dev )
         self.serial = open(dev,'w')
      elif self.flags & (FLAG_NET_SERVER|FLAG_NET_CLIENT):
        if self.flags & FLAG_NET_SERVER:
            self.sockserv()
-       elif flags & FLAG_NET_CLIENT:
+       elif self.flags & FLAG_NET_CLIENT:
            self.sockcli()
 
        self.poll = select.poll()
@@ -183,8 +193,8 @@ class bmf:
 
      else:
 	self.msgcallback( "serial port: connecting to %s at %d" % 
-				(self.dev,speed) )
-        self.serial = serial.Serial(dev, baudrate=speed, 
+				(self.dev,self.speed) )
+        self.serial = serial.Serial(self.dev, baudrate=self.speed, 
                 rtscts=False, timeout=10, writeTimeout=10 )
         # http://pyserial.sourceforge.net/pyserial_api.html
         # with timeouts set, application should never hang.
@@ -199,6 +209,7 @@ class bmf:
 
      """
      host, port = self.dev.split(':')
+     print "waiting for connection to: %s, on port: %s" % ( host, port )
      host = None
      for res in socket.getaddrinfo(host, int(port), socket.AF_UNSPEC,
                               socket.SOCK_STREAM, 0, socket.AI_PASSIVE):
@@ -248,11 +259,11 @@ class bmf:
             s = None
             continue
         break
+
      if s is None:
-        print "failed to open socket."
+        print "failed to open socket on %s, port: %s." % ( host, port )
         sys.exit(1)
 
-      
      self.serial=s
 
 
@@ -804,14 +815,6 @@ class bmf:
         return
 
     self.sendbulkbinbuffer(data,filename,baseaddress)
-
-  def pullfile(self,filename,baseaddress,count):
-    """
-       issue a data pull request, setting the output file name...
-
-       FIXME: not implemented yet.
-    """ 
-    return
 
   def __hexrecord2bin(self,record):
     """ convert intel hex string representation to a true binary format.

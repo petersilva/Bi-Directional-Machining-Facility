@@ -1,15 +1,15 @@
 
 WORKING ON:
-  -- logfile support not general yet.
+  -- five digits with a . and all 0's. pain in the butt. code size already tripled, with no leading digits.
+
 
 TODO:
 
-  -- save keyboard positions and settings.
+  -- logfile support not general yet.
+  -- GUI save/restore bug: doesn't seem to save/restore the size of the main window?
   -- declarative UI? or CSS or ...
-  -- Align Right labels...
   -- Replace literal op-codes with consants OC_
   -- set cwd ?
-  -- bug: click on flags causes value change...
   -- decimal in counters.
   -- documentation review.
         -- help function in GUI?
@@ -23,7 +23,14 @@ TODO:
   -- have routine updates make radiobuttons symmetrical.
   -- have toggles stay depressed when appropriiate.
 
-done:
+
+2011/01/23:
+  -- implemented save/restore state (GUI and comm parameters)
+  -- save keyboard positions and settings.
+  -- Align Right labels...
+  -- fixed bug: click on flags causes value change...
+
+december:
   -- implement new opcode 82.
   -- default serial baudrate now 115200 (embedded system updated.)
   -- options for flow control (still off) included in code.

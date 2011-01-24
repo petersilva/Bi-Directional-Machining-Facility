@@ -60,6 +60,7 @@ class LogWindow(QtGui.QMainWindow):
      self.max_entries=max_entries
 
      self.msgdock = QtGui.QDockWidget("Log",self)
+     self.msgdock.setObjectName('Keypad1x')
      self.msgdock.setAllowedAreas(QtCore.Qt.AllDockWidgetAreas )
 
      self.messageTable = QtGui.QTableWidget(1,2,self)

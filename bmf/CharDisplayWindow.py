@@ -72,6 +72,7 @@ class CharDisplayWindow(QtGui.QWidget):
      """
      super(CharDisplayWindow, self).__init__(parent)
 
+     self.setObjectName('CharDisplayWindow')
      self.log = log
      self.setDisplay(display)
 

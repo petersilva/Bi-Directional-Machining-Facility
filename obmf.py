@@ -71,10 +71,10 @@ def print_msg(s):
 
 def operate_bmf(port=None,cmd="view",speed=38400,dbg=0):
     
-    if port != None:
-      b = bmf.bmf(dev=port,speed=speed,flags=dbg,msgcallback=print_msg)
-    else:
-      b = None
+    #if port != None:
+    b = bmf.bmf(dev=port,speed=speed,flags=dbg,msgcallback=print_msg)
+    #else:
+    #  b = None
     
     if cmd == 'view':
       from PyQt4 import QtGui
@@ -119,15 +119,18 @@ if __name__ == '__main__':
     #    hardcoded defaults to make testing go quickly.
     #    would be nice to replace with a detection scan...
     #
+    #if platform.system() == "Windows":
+    #    port="COM1"
+    #    dbg=0
+    #else:
+    #    # I test with a socket back to myself now...
+    #    port='localhost:50007'
+    #    dbg=8
+
     speed=115200
-    if platform.system() == "Windows":
-        port="COM1"
-        dbg=0
-    else:
-        # I test with a socket back to myself now...
-        port='localhost:50007'
-        dbg=8
-    
+    port=None 
+    dbg=0
+
     opts, args = getopt.getopt(sys.argv[1:],"f:hp:s:V",[ 
     "flags=", "f=", "help", "port=", "speed=", "version" ])
     

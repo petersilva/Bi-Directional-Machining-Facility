@@ -12,6 +12,8 @@ from PyQt4 import QtGui
 from PyQt4 import QtCore
 
 import time
+import pickle
+import os
 
 import bmf
 from . import CounterDisplay
@@ -115,40 +117,48 @@ class GUI(QtGui.QMainWindow):
     #          self.bmf.display.writeStringXY( self.bmf.counter_display[i][0], self.bmf.counter_display[i][1],
     #            "%2d.%03d" % ( self.bmf.counters[i] / 1000 , self.bmf.counters[i] % 1000 ))
 
-    self.counters.qw.axc.display(self.bmf.counters[0])
-    self.counters.qw.ayc.display(self.bmf.counters[1])
-    self.counters.qw.azc.display(self.bmf.counters[2])
-    self.counters.qw.rxc.display(self.bmf.counters[3])
-    self.counters.qw.ryc.display(self.bmf.counters[4])
-    self.counters.qw.rzc.display(self.bmf.counters[5])
+    self.counters.qw.axci.display(int(self.bmf.counters[0]/1000))
+    self.counters.qw.axcd.display(int(self.bmf.counters[0]%1000))
+    self.counters.qw.ayci.display(int(self.bmf.counters[1]/1000))
+    self.counters.qw.aycd.display(int(self.bmf.counters[1]%1000))
+    self.counters.qw.azci.display(int(self.bmf.counters[2]/1000))
+    self.counters.qw.azcd.display(int(self.bmf.counters[2]%1000))
+
+    self.counters.qw.rxci.display(int(self.bmf.counters[3]/1000))
+    self.counters.qw.rxcd.display(int(self.bmf.counters[3]%1000))
+    self.counters.qw.ryci.display(int(self.bmf.counters[4]/1000))
+    self.counters.qw.rycd.display(int(self.bmf.counters[4]%1000))
+    self.counters.qw.rzci.display(int(self.bmf.counters[5]/1000))
+    self.counters.qw.rzcd.display(int(self.bmf.counters[5]%1000))
+
 
 
   def __connect(self):
     """
-       setup up a connection to the BMF peer.
+       Connect to BMF peer.
 
     """
 
     if self.connected:
+       self.__logit("already connected. Disconnect, then try again")
        return
 
-    flags = 0 
-    if self.stg.trace.isChecked() : 
-        flags = flags | 0x10
-    if self.stg.noack.isChecked(): 
-        flags = flags | 0x02
-    if self.stg.netsrv.isChecked():
-        flags = flags | 0x04
-    if self.stg.netcli.isChecked():
-        flags = flags | 0x08
+    # make sure flags are uptodate.
 
-    self.bmf = bmf.bmf(str(self.stg.portselect.currentText()),
-             speed=int(str(self.stg.bps.currentText())), 
-             flags=flags,
-	     msgcallback=self.__logit,
-             display=self.charDisplay )
+    self.__serialParamChanged(None)
+
+
+    self.bmf = bmf.bmf(dev=self.bmf.dev,speed=self.bmf.speed,flags=self.flags,
+	     msgcallback=self.__logit, display=self.charDisplay )
+
     self.connected = True
+
+    # this button cannot be overridden.
+    self.bmf.labels[0x2f]='Send File'
   
+
+
+
   def __disconnect(self):
      """
         disconnect from the BMF peer.
@@ -157,7 +167,6 @@ class GUI(QtGui.QMainWindow):
        return
 
      self.bmf.serial.close()
-     self.bmf=None
      self.connected = False
      self.__logit( "Disconnected" )
 
@@ -243,6 +252,7 @@ class GUI(QtGui.QMainWindow):
     self.kp1.setObjectName("Keypad 1x")
 
     self.kp1.dock = QtGui.QDockWidget("Keypad 1x",self)
+    self.kp1.dock.setObjectName('Keypad1x')
     self.kp1.dock.setAllowedAreas( QtCore.Qt.AllDockWidgetAreas )
     self.kp1.dock.setWidget(self.kp1)
 
@@ -310,6 +320,7 @@ class GUI(QtGui.QMainWindow):
     self.kp2.setObjectName("Keypad 2x")
 
     self.kp2.dock = QtGui.QDockWidget("Keypad 2x",self)
+    self.kp2.dock.setObjectName('Keypad2x')
     self.kp2.dock.setAllowedAreas(QtCore.Qt.AllDockWidgetAreas )
     self.kp2.dock.setWidget(self.kp2)
 
@@ -360,9 +371,8 @@ class GUI(QtGui.QMainWindow):
     self.kp2.k2e = self.__button(u'2e', self.kp2, self.__sendKeyAction)
     kp2layout.addWidget(self.kp2.k2e,3,2)
 
-    self.kp2.k2f = self.__button(u'2f', self.kp2, self.sendfile, False)
+    self.kp2.k2f = self.__button(u'Send File', self.kp2, self.sendfile, False)
     kp2layout.addWidget(self.kp2.k2f,3,3)
-    self.bmf.labels[0x2f]='Send File'
 
     #self.tab.addTab(self.kp2,"Commands")
     self.addDockWidget(QtCore.Qt.BottomDockWidgetArea, self.kp2.dock)
@@ -379,6 +389,7 @@ class GUI(QtGui.QMainWindow):
     self.kp3.setObjectName("Other Com")
 
     self.kp3.dock = QtGui.QDockWidget("Keypad 3",self)
+    self.kp3.dock.setObjectName('Keypad3x')
     self.kp3.dock.setAllowedAreas(QtCore.Qt.AllDockWidgetAreas )
     self.kp3.dock.setWidget(self.kp3)
 
@@ -455,13 +466,11 @@ class GUI(QtGui.QMainWindow):
 
     # ensure radio button consistency.
     if self.stg.netsrv.isChecked():
-       if self.stg.trace.isChecked() : 
-           self.stg.trace.setChecked(False)
        if self.stg.netcli.isChecked():
            self.stg.netcli.setChecked(False)
     if self.stg.netcli.isChecked():
-       if self.stg.trace.isChecked() : 
-           self.stg.trace.setChecked(False)
+       if self.stg.netsrv.isChecked() : 
+           self.stg.netsrv.setChecked(False)
 
     duration=time.time()-gustart
     gui_update_total_time += (time.time()-gustart)
@@ -514,6 +523,25 @@ class GUI(QtGui.QMainWindow):
       self.stg.portselect.setCurrentIndex(last)
     
 
+
+  def __serialParamChanged(self,arg):
+
+    self.bmf.dev = self.stg.portselect.currentText()
+    self.bmf.speed =  int(str(self.stg.bps.currentText()))
+
+    flags = 0 
+    if self.stg.trace.isChecked() : 
+        flags = flags | 0x10
+    if self.stg.ack.isChecked(): 
+        flags = flags | 0x02
+    if self.stg.netsrv.isChecked():
+        flags = flags | 0x04
+    if self.stg.netcli.isChecked():
+        flags = flags | 0x08
+
+    self.flags = flags
+
+
   def __initSerialPortSettings(self):
     """
         initialize settings keypad.
@@ -523,6 +551,7 @@ class GUI(QtGui.QMainWindow):
     self.stg.setObjectName("Settings")
 
     self.stg.dock = QtGui.QDockWidget("Settings",self)
+    self.stg.dock.setObjectName('Settings')
     self.stg.dock.setAllowedAreas( QtCore.Qt.AllDockWidgetAreas )
     self.stg.dock.setWidget(self.stg)
 
@@ -546,21 +575,19 @@ class GUI(QtGui.QMainWindow):
        import glob
        ports=glob.glob("/dev/ttyS*") + glob.glob("/dev/ttyUSB*")
 
-  
     
     if (self.bmf != None) and (self.bmf.dev != None):
       ports.append(self.bmf.dev)
        
     ports.append("localhost:50007")
 
+    self.portslist = ports
+
     self.stg.pslabel = QtGui.QLabel("&Port:")
 
     self.stg.portselect = QtGui.QComboBox()
     self.stg.portselect.addItems(ports)    
 
-    if (self.bmf != None) and (self.bmf.dev != None):
-       self.stg.portselect.setCurrentIndex(ports.index(self.bmf.dev))
-    
     self.stg.pslabel.setBuddy(self.stg.portselect)
     stglayout.addWidget(self.stg.pslabel,0,0)
     stglayout.addWidget(self.stg.portselect,0,1,1,3)
@@ -571,24 +598,30 @@ class GUI(QtGui.QMainWindow):
     # baud
     self.stg.bpslabel = QtGui.QLabel("&Baud:")
     self.stg.bps = QtGui.QComboBox()
+
     speeds=[ "300","900","1200","4800","9600","19200","38400","57600","115200" ]
     self.stg.bps.addItems(speeds)    
-    if (self.bmf != None) and (self.bmf.dev != None):
-        self.stg.bps.setCurrentIndex( speeds.index(str(self.bmf.speed)))
-    else:
-        self.stg.bps.setCurrentIndex( 6 ) # ought to be 38400
+    self.speedlist=speeds
 
     self.stg.bpslabel.setBuddy(self.stg.bps)
     stglayout.addWidget(self.stg.bpslabel,1,0,1,1)
     stglayout.addWidget(self.stg.bps,1,2,1,3)
 
+    self.__setSerial()
+    self.connect(self.stg.bps, QtCore.SIGNAL('currentIndexChanged()'), self.__serialParamChanged)
+    self.connect(self.stg.bps, QtCore.SIGNAL('released()'), self.__serialParamChanged)
+    self.connect(self.stg.bps, QtCore.SIGNAL('released()'), self.__serialParamChanged)
+    self.connect(self.stg.portselect, QtCore.SIGNAL('currentIndexChanged()'), self.__serialParamChanged)
+
+
+
     # Flags
     self.stg.trace = QtGui.QRadioButton('Trace', self.stg)
     self.stg.trace.setAutoExclusive(False)
     stglayout.addWidget(self.stg.trace,2,0)
-    self.stg.noack = QtGui.QRadioButton('No Ack', self.stg)
-    self.stg.noack.setAutoExclusive(False)
-    stglayout.addWidget(self.stg.noack,2,1)
+    self.stg.ack = QtGui.QRadioButton('Acks', self.stg)
+    self.stg.ack.setAutoExclusive(False)
+    stglayout.addWidget(self.stg.ack,2,1)
     self.stg.netsrv = QtGui.QRadioButton('Net Server', self.stg)
     self.stg.netsrv.setAutoExclusive(False)
     stglayout.addWidget(self.stg.netsrv,2,2)
@@ -610,12 +643,31 @@ class GUI(QtGui.QMainWindow):
     self.viewMenu.addAction(self.stg.dock.toggleViewAction())
     self.stg.dock.hide()
 
+  def __setSerial(self):
+
+    if (self.bmf != None) and (self.bmf.dev != None):
+       self.stg.portselect.setCurrentIndex(self.portslist.index(self.bmf.dev))
+       self.stg.bps.setCurrentIndex( self.speedlist.index(str(self.bmf.speed)))
+
+       self.stg.trace.setChecked(self.bmf.flags  & 0x10) 
+       self.stg.ack.setChecked(self.bmf.flags  & 0x02)
+       self.stg.netsrv.setChecked(self.bmf.flags & 0x04)
+       self.stg.netcli.setChecked(self.bmf.flags & 0x08)
+
+    else:
+        self.stg.bps.setCurrentIndex( 6 ) # ought to be 38400
+
+
+
+
+
   def __initLEDS(self):
 
     self.leds = QtGui.QWidget()
     self.leds.setObjectName("LEDS")
 
     self.leds.dock = QtGui.QDockWidget("LEDS",self)
+    self.leds.dock.setObjectName('LEDS')
     self.leds.dock.setAllowedAreas( QtCore.Qt.AllDockWidgetAreas )
     self.leds.dock.setWidget(self.leds)
 
@@ -708,6 +760,7 @@ class GUI(QtGui.QMainWindow):
     self.tst.setObjectName("Testing")
 
     self.tst.dock = QtGui.QDockWidget("Testing",self)
+    self.tst.dock.setObjectName('Testing')
     self.tst.dock.setAllowedAreas( QtCore.Qt.AllDockWidgetAreas )
     self.tst.dock.setWidget(self.tst)
 
@@ -736,13 +789,39 @@ class GUI(QtGui.QMainWindow):
 
 
 
+  def __restore( self ):
+     try: 
+       statefile = open('obmf.sav', 'r')
+       #state = statefile.read()
+       self.bmf.dev = pickle.load(statefile)
+       self.bmf.speed = pickle.load(statefile)
+       self.flags = pickle.load(statefile)
+       self.bmf.flags=self.flags
+       self.__setSerial()
+       self.guistate = pickle.load(statefile)
+       statefile.close()
+     except:
+       return
+
   def __save( self ):
-     state = self.saveState()
+     
+     guistate = self.saveState()
      statefile = open('obmf.sav', 'w')
-     statefile.write(state)
+     #statefile.write(state)
+     if self.connected:
+        pickle.dump(self.bmf.dev,statefile)
+        pickle.dump(self.bmf.speed,statefile)
+        pickle.dump(self.bmf.flags,statefile)
+     else:
+        pickle.dump(None,statefile)
+        pickle.dump(None,statefile)
+        pickle.dump(None,statefile)
+
+     pickle.dump(guistate,statefile)
      statefile.close()
 
   def __exit( self ):
+     self.__save()
      self.__disconnect()
      self.log.close()
      self.counters.close()
@@ -770,12 +849,6 @@ class GUI(QtGui.QMainWindow):
      self.exy=random.randint(0,self.charDisplay.rows-1)
      self.exx=random.randint(0,self.charDisplay.columns-1)
 
-     #if self.connected:
-     #    self.bmf.counters[0]=1000*self.exx
-     #    self.bmf.counters[1]=1000*self.exy
-     #    self.bmf.updateReceived=True
-     #else:
-
      self.charDisplayWindow.update()
 
       
@@ -788,7 +861,7 @@ class GUI(QtGui.QMainWindow):
      self.exy=4
 
      self.msg = "almost ready?"
-     self.connected = (bmf != None)
+     self.connected = False
 
      exit = QtGui.QAction(QtGui.QIcon('icons/exit.png'), 'Exit', self)
 
@@ -806,7 +879,7 @@ class GUI(QtGui.QMainWindow):
      #self.__logit("Startup...")
 
      self.bmf=bmf
-
+     self.guistate=None
 
      self.charDisplay=CharDisplay.CharDisplay(self.__logit) 
      self.charDisplayWindow=CharDisplayWindow.CharDisplayWindow(self.__logit,self.charDisplay)
@@ -816,7 +889,7 @@ class GUI(QtGui.QMainWindow):
 
      self.counters=CounterDisplay.CounterDisplay(self)
 
-     self.setMinimumSize(900, 500)
+     self.setMinimumSize(900, 600)
      self.setSizePolicy( QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Expanding )
 
      self.setWindowTitle('BMF - Panel')
@@ -837,15 +910,20 @@ class GUI(QtGui.QMainWindow):
      self.__initSerialPortSettings()     
      self.__initTesting()     
 
-     save = QtGui.QAction(QtGui.QIcon('icons/exit.png'), 'Exit', self)
-     save.setShortcut('Ctrl+Q')
-     save.setStatusTip('Exit application')
+     save = QtGui.QAction(QtGui.QIcon('icons/exit.png'), 'Save View', self)
+     save.setShortcut('Ctrl+S')
+     save.setStatusTip('Save placement of dialogs')
      self.viewMenu.addAction(save)
      self.connect(save, QtCore.SIGNAL('triggered()'), self.__save)
 
-   
+ 
      #self.show()
+     self.__restore()
+     self.__setSerial()
      self.setCentralWidget(self.charDisplayWindow)
+
+     if self.guistate != None:
+         self.restoreState(self.guistate)
 
      self.update_in_progress=False
      self.updateTimer = QtCore.QTimer(self)
@@ -854,4 +932,8 @@ class GUI(QtGui.QMainWindow):
      self.updateTimer.start()
 
      self.logfile=open("bmf.log","w")
+
+     if self.bmf.dev != None:
+        self.__connect()
+
      self.__logit("Ready")
