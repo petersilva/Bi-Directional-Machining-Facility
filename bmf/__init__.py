@@ -47,12 +47,12 @@ keycodes = {
      u'28' : 0x28, u'29' : 0x29, u'2a' : 0x2a, u'2b' : 0x2b,        
      u'2c' : 0x2c, u'2d' : 0x2d, u'2e' : 0x2e, u'2f' : 0x2f, 
      # keypad 2 old...
-     u'\u2196' : 113, u'\u2191' : 119, u'\u2197': 101,      # nw,n,e : q,w,e
-     u'\u2190': 97, 'Stop': 115, u'\u2192': 100,  # W,,E : a,s,d
-     u'\u2199' : 122, u'\u2193':120, u'\u2198':99,        # SW,S,SE :z,x,c
-     '+' : 43,  'Speed': 83, '-': 45,        # +,<,=
-     'Hi/Lo': 60, 'Origin': 61, 'Start/Stop': 62,   # , , >
-     'FF': 255, u'\u21e7': 63, u'\u21e9': 64,       # FF, Up, Down
+     #u'\u2196' : 113, u'\u2191' : 119, u'\u2197': 101,      # nw,n,e : q,w,e
+     #u'\u2190': 97, 'Stop': 115, u'\u2192': 100,  # W,,E : a,s,d
+     #u'\u2199' : 122, u'\u2193':120, u'\u2198':99,        # SW,S,SE :z,x,c
+     #'+' : 43,  'Speed': 83, '-': 45,        # +,<,=
+     #'Hi/Lo': 60, 'Origin': 61, 'Start/Stop': 62,   # , , >
+     #'FF': 255, u'\u21e7': 63, u'\u21e9': 64,       # FF, Up, Down
      # commands...
      'Status': 83,  'Reset': 82,             # S,R
      'Block' : 0x80,  'Mark': 72,             # B,H  

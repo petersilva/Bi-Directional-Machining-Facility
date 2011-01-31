@@ -258,40 +258,40 @@ class GUI(QtGui.QMainWindow):
 
     kp1layout=QtGui.QGridLayout(self.kp1)
 
-    self.kp1.k10 = self.__button('1',self.kp1,self.__sendKeyAction)
+    self.kp1.k10 = self.__button('10',self.kp1,self.__sendKeyAction)
     kp1layout.addWidget(self.kp1.k10,0,0)
 
-    self.kp1.k11 = self.__button('2', self.kp1, self.__sendKeyAction)
+    self.kp1.k11 = self.__button('11', self.kp1, self.__sendKeyAction)
     kp1layout.addWidget(self.kp1.k11,0,1)
 
-    self.kp1.k12 = self.__button('3', self.kp1, self.__sendKeyAction)
+    self.kp1.k12 = self.__button('12', self.kp1, self.__sendKeyAction)
     kp1layout.addWidget(self.kp1.k12,0,2)
 
-    self.kp1.k13 = self.__button('4', self.kp1, self.__sendKeyAction)
+    self.kp1.k13 = self.__button('13', self.kp1, self.__sendKeyAction)
     kp1layout.addWidget(self.kp1.k13,0,3)
 
-    self.kp1.k14 = self.__button('5', self.kp1, self.__sendKeyAction)
+    self.kp1.k14 = self.__button('14', self.kp1, self.__sendKeyAction)
     kp1layout.addWidget(self.kp1.k14,1,0)
 
-    self.kp1.k15 = self.__button('6', self.kp1, self.__sendKeyAction)
+    self.kp1.k15 = self.__button('15', self.kp1, self.__sendKeyAction)
     kp1layout.addWidget(self.kp1.k15,1,1)
 
-    self.kp1.k16 = self.__button('7', self.kp1, self.__sendKeyAction)
+    self.kp1.k16 = self.__button('16', self.kp1, self.__sendKeyAction)
     kp1layout.addWidget(self.kp1.k16,1,2)
 
-    self.kp1.k17 = self.__button('8', self.kp1, self.__sendKeyAction)
+    self.kp1.k17 = self.__button('17', self.kp1, self.__sendKeyAction)
     kp1layout.addWidget(self.kp1.k17,1,3)
 
-    self.kp1.k18 = self.__button('9', self.kp1, self.__sendKeyAction)
+    self.kp1.k18 = self.__button('18', self.kp1, self.__sendKeyAction)
     kp1layout.addWidget(self.kp1.k18,3,0)
 
-    self.kp1.k19 = self.__button('0', self.kp1, self.__sendKeyAction)
+    self.kp1.k19 = self.__button('19', self.kp1, self.__sendKeyAction)
     kp1layout.addWidget(self.kp1.k19,3,1)
 
-    self.kp1.k1a = self.__button('.', self.kp1, self.__sendKeyAction)
+    self.kp1.k1a = self.__button('1a', self.kp1, self.__sendKeyAction)
     kp1layout.addWidget(self.kp1.k1a,3,2)
 
-    self.kp1.k1b = self.__button('+/-', self.kp1, self.__sendKeyAction)
+    self.kp1.k1b = self.__button('1b', self.kp1, self.__sendKeyAction)
     kp1layout.addWidget(self.kp1.k1b,3,3)
 
     self.kp1.k1c = self.__button('1c', self.kp1, self.__sendKeyAction)
@@ -326,34 +326,34 @@ class GUI(QtGui.QMainWindow):
 
     kp2layout=QtGui.QGridLayout(self.kp2)
 
-    self.kp2.k20 = self.__button(u'\u2196', self.kp2, self.__sendKeyAction)
+    self.kp2.k20 = self.__button(u'20', self.kp2, self.__sendKeyAction)
     kp2layout.addWidget(self.kp2.k20,0,0)
 
-    self.kp2.k21 = self.__button(u'\u2191', self.kp2, self.__sendKeyAction)
+    self.kp2.k21 = self.__button(u'21', self.kp2, self.__sendKeyAction)
     kp2layout.addWidget(self.kp2.k21,0,1)
 
-    self.kp2.k22 = self.__button(u'\u2197', self.kp2, self.__sendKeyAction)
+    self.kp2.k22 = self.__button(u'22', self.kp2, self.__sendKeyAction)
     kp2layout.addWidget(self.kp2.k22,0,2)
 
-    self.kp2.k23 = self.__button(u'\u2190', self.kp2, self.__sendKeyAction)
+    self.kp2.k23 = self.__button(u'23', self.kp2, self.__sendKeyAction)
     kp2layout.addWidget(self.kp2.k23,0,3)
 
-    self.kp2.k24 = self.__button('Stop', self.kp2, self.__sendKeyAction )
+    self.kp2.k24 = self.__button(u'24', self.kp2, self.__sendKeyAction )
     kp2layout.addWidget(self.kp2.k24,1,0)
 
-    self.kp2.k25 = self.__button(u'\u2192', self.kp2, self.__sendKeyAction)
+    self.kp2.k25 = self.__button(u'25', self.kp2, self.__sendKeyAction)
     kp2layout.addWidget(self.kp2.k25,1,1)
 
-    self.kp2.k26 = self.__button(u'\u2199', self.kp2, self.__sendKeyAction)
+    self.kp2.k26 = self.__button(u'26', self.kp2, self.__sendKeyAction)
     kp2layout.addWidget(self.kp2.k26,1,2)
 
-    self.kp2.k27 = self.__button(u'\u2193', self.kp2, self.__sendKeyAction)
+    self.kp2.k27 = self.__button(u'27', self.kp2, self.__sendKeyAction)
     kp2layout.addWidget(self.kp2.k27,1,3)
 
-    self.kp2.k28 = self.__button(u'\u2198', self.kp2, self.__sendKeyAction)
+    self.kp2.k28 = self.__button(u'28', self.kp2, self.__sendKeyAction)
     kp2layout.addWidget(self.kp2.k28,2,0)
 
-    self.kp2.k29 = self.__button(u'\u2198', self.kp2, self.__sendKeyAction)
+    self.kp2.k29 = self.__button(u'29', self.kp2, self.__sendKeyAction)
     kp2layout.addWidget(self.kp2.k29,2,1)
 
     self.kp2.k2a = self.__button(u'2a', self.kp2, self.__sendKeyAction)
