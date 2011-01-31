@@ -151,7 +151,7 @@ class GUI(QtGui.QMainWindow):
     self.bmf = bmf.bmf(dev=self.bmf.dev,speed=self.bmf.speed,flags=self.flags,
 	     msgcallback=self.__logit, display=self.charDisplay )
 
-    self.connected = True
+    self.bmf.connect()
 
     # this button cannot be overridden.
     self.bmf.labels[0x2f]='Send File'
@@ -526,7 +526,7 @@ class GUI(QtGui.QMainWindow):
 
   def __serialParamChanged(self,arg):
 
-    self.bmf.dev = self.stg.portselect.currentText()
+    self.bmf.dev = str(self.stg.portselect.currentText())
     self.bmf.speed =  int(str(self.stg.bps.currentText()))
 
     flags = 0 
@@ -935,5 +935,6 @@ class GUI(QtGui.QMainWindow):
 
      if self.bmf.dev != None:
         self.__connect()
+        self.connected = True
 
      self.__logit("Ready")

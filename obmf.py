@@ -92,8 +92,10 @@ def operate_bmf(port=None,cmd="view",speed=38400,dbg=0):
       app.exec_()
       QtGui.qApp = None
       app = None
-    
-    elif cmd  == 'key' :
+      return
+ 
+    b.connect()
+    if cmd  == 'key' :
       print "Send a key"
       b.sendKey(args[1])
     elif cmd == 'read' :

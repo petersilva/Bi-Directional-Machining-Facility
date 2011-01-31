@@ -46,7 +46,7 @@ keycodes = {
      u'24' : 0x24, u'25' : 0x25, u'26' : 0x26, u'27' : 0x27, 
      u'28' : 0x28, u'29' : 0x29, u'2a' : 0x2a, u'2b' : 0x2b,        
      u'2c' : 0x2c, u'2d' : 0x2d, u'2e' : 0x2e, u'2f' : 0x2f, 
-     # eypad 2 old...
+     # keypad 2 old...
      u'\u2196' : 113, u'\u2191' : 119, u'\u2197': 101,      # nw,n,e : q,w,e
      u'\u2190': 97, 'Stop': 115, u'\u2192': 100,  # W,,E : a,s,d
      u'\u2199' : 122, u'\u2193':120, u'\u2198':99,        # SW,S,SE :z,x,c
@@ -109,10 +109,11 @@ class bmf:
      self.read_buffer=''
      self.speed = speed
      self.dev = dev
-     if flags == None:
-       self.flags = 0
-     else:
-       self.flags = flags
+     self.serial = None
+
+     self.flags = 0
+     if flags != None:
+       self.flags = int(flags)
 
      #self.flags = flags | FLAG_TRACE
      self.msgcallback=msgcallback
@@ -172,8 +173,8 @@ class bmf:
          i+=1
 
      self.__bindOpCode( 0xaa, self.readcmd_invokeEmulator)
-     if self.dev != None:
-        self.connect()
+     #if self.dev != None:
+     #   self.connect()
 
       
 
@@ -192,12 +193,21 @@ class bmf:
        self.poll.register(self.serial.fileno(),select.POLLIN)
 
      else:
-	self.msgcallback( "serial port: connecting to %s at %d" % 
-				(self.dev,self.speed) )
-        self.serial = serial.Serial(self.dev, baudrate=self.speed, 
+        try:
+          self.serial = serial.Serial(self.dev, baudrate=self.speed, 
                 rtscts=False, timeout=10, writeTimeout=10 )
-        # http://pyserial.sourceforge.net/pyserial_api.html
-        # with timeouts set, application should never hang.
+          # http://pyserial.sourceforge.net/pyserial_api.html
+          # with timeouts set, application should never hang.
+        except:
+	  pass
+
+        if self.serial != None:
+          print self.serial
+	  self.msgcallback( "serial port: connected to %s at %d" % 
+				(self.dev,self.speed) )
+        else:
+	  self.msgcallback( "ERROR: failed to connect to %s at %d" % 
+				(self.dev,self.speed) )
 
 
 
@@ -242,7 +252,6 @@ class bmf:
      """
      host, port = self.dev.split(':')
      
-     self.msgcallback( "connecting to host: %s, port: %s" % ( host, port ))
      s = None
      for res in socket.getaddrinfo( str(host), int(port), socket.AF_UNSPEC, socket.SOCK_STREAM ):
         af, socktype, proto, canonname, sa = res
@@ -261,8 +270,9 @@ class bmf:
         break
 
      if s is None:
-        print "failed to open socket on %s, port: %s." % ( host, port )
-        sys.exit(1)
+        self.msgcallback( "ERROR: failed to connect to host: %s, port: %s" % ( host, port ))
+     else:
+        self.msgcallback( "connected to host: %s, port: %s" % ( host, port ))
 
      self.serial=s
 
@@ -607,6 +617,10 @@ class bmf:
 
        silent on success, otherwise, post given error message.
      """
+     if self.serial == None:
+         self.msgcallback( "ERROR: port %s not connected" % self.dev )
+         return
+
      if self.flags & FLAG_TRACE:
          self.msgcallback( "TRACE Write: " + binascii.hexlify(buf) )
 
