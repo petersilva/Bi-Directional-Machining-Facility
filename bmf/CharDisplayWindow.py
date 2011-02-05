@@ -40,6 +40,9 @@ class CharDisplayWindow(QtGui.QWidget):
      # FIXME: crappy heuristic to get the font to fit in the window.
      # need to select a monospaced / fixed character width font for co-ordinates to work.
      myfont=QtGui.QFont("Courier")
+     #myfont=QtGui.QFont("Everson")
+     #myfont=QtGui.QFont("GGTKA")
+
      # FIXME:  good heuristic would have something to do with font metrics.
      #myfm=QtGui.QFontMetrics(myfont)
      myfont.setPixelSize(int(xmag*1.7)) 

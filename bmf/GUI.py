@@ -465,12 +465,12 @@ class GUI(QtGui.QMainWindow):
     self.statusBar().showMessage(self.msg)
 
     # ensure radio button consistency.
-    if self.stg.netsrv.isChecked():
-       if self.stg.netcli.isChecked():
-           self.stg.netcli.setChecked(False)
-    if self.stg.netcli.isChecked():
-       if self.stg.netsrv.isChecked() : 
-           self.stg.netsrv.setChecked(False)
+    if self.portstg.netsrv.isChecked():
+       if self.portstg.netcli.isChecked():
+           self.portstg.netcli.setChecked(False)
+    if self.portstg.netcli.isChecked():
+       if self.portstg.netsrv.isChecked() : 
+           self.portstg.netsrv.setChecked(False)
 
     duration=time.time()-gustart
     gui_update_total_time += (time.time()-gustart)
@@ -518,25 +518,25 @@ class GUI(QtGui.QMainWindow):
     """
     op, ok = QtGui.QInputDialog.getText(self,"Other Port", "Port Address")
     if ok:
-      last = self.stg.portselect.count()    
-      self.stg.portselect.addItem(op)    
-      self.stg.portselect.setCurrentIndex(last)
+      last = self.portstg.portselect.count()    
+      self.portstg.portselect.addItem(op)    
+      self.portstg.portselect.setCurrentIndex(last)
     
 
 
   def __serialParamChanged(self,arg):
 
-    self.bmf.dev = str(self.stg.portselect.currentText())
-    self.bmf.speed =  int(str(self.stg.bps.currentText()))
+    self.bmf.dev = str(self.portstg.portselect.currentText())
+    self.bmf.speed =  int(str(self.portstg.bps.currentText()))
 
     flags = 0 
-    if self.stg.trace.isChecked() : 
+    if self.portstg.trace.isChecked() : 
         flags = flags | 0x10
-    if self.stg.ack.isChecked(): 
+    if self.portstg.ack.isChecked(): 
         flags = flags | 0x02
-    if self.stg.netsrv.isChecked():
+    if self.portstg.netsrv.isChecked():
         flags = flags | 0x04
-    if self.stg.netcli.isChecked():
+    if self.portstg.netcli.isChecked():
         flags = flags | 0x08
 
     self.flags = flags
@@ -547,15 +547,15 @@ class GUI(QtGui.QMainWindow):
         initialize settings keypad.
 
     """
-    self.stg = QtGui.QWidget()
-    self.stg.setObjectName("Settings")
+    self.portstg = QtGui.QWidget()
+    self.portstg.setObjectName("Port")
 
-    self.stg.dock = QtGui.QDockWidget("Settings",self)
-    self.stg.dock.setObjectName('Settings')
-    self.stg.dock.setAllowedAreas( QtCore.Qt.AllDockWidgetAreas )
-    self.stg.dock.setWidget(self.stg)
+    self.portstg.dock = QtGui.QDockWidget("Port",self)
+    self.portstg.dock.setObjectName('Port')
+    self.portstg.dock.setAllowedAreas( QtCore.Qt.AllDockWidgetAreas )
+    self.portstg.dock.setWidget(self.portstg)
 
-    stglayout=QtGui.QGridLayout(self.stg)
+    stglayout=QtGui.QGridLayout(self.portstg)
     #stglayout.setColumnStretch(0,19)
     #stglayout.setColumnStretch(1,1)
     #stglayout.setVerticalSpacing(4)
@@ -579,83 +579,84 @@ class GUI(QtGui.QMainWindow):
     if (self.bmf != None) and (self.bmf.dev != None):
       ports.append(self.bmf.dev)
        
-    ports.append("localhost:50007")
+    if "localhost:50007" not in ports:
+      ports.append("localhost:50007")
 
     self.portslist = ports
 
-    self.stg.pslabel = QtGui.QLabel("&Port:")
+    self.portstg.pslabel = QtGui.QLabel("&Port:")
 
-    self.stg.portselect = QtGui.QComboBox()
-    self.stg.portselect.addItems(ports)    
+    self.portstg.portselect = QtGui.QComboBox()
+    self.portstg.portselect.addItems(ports)    
 
-    self.stg.pslabel.setBuddy(self.stg.portselect)
-    stglayout.addWidget(self.stg.pslabel,0,0)
-    stglayout.addWidget(self.stg.portselect,0,1,1,3)
+    self.portstg.pslabel.setBuddy(self.portstg.portselect)
+    stglayout.addWidget(self.portstg.pslabel,0,0)
+    stglayout.addWidget(self.portstg.portselect,0,1,1,3)
 
-    self.stg.connect = self.__button('Other', self.stg, self.__otherPort)
-    stglayout.addWidget(self.stg.connect,0,4,1,1)
+    self.portstg.connect = self.__button('Other', self.portstg, self.__otherPort)
+    stglayout.addWidget(self.portstg.connect,0,4,1,1)
 
     # baud
-    self.stg.bpslabel = QtGui.QLabel("&Baud:")
-    self.stg.bps = QtGui.QComboBox()
+    self.portstg.bpslabel = QtGui.QLabel("&Baud:")
+    self.portstg.bps = QtGui.QComboBox()
 
     speeds=[ "300","900","1200","4800","9600","19200","38400","57600","115200" ]
-    self.stg.bps.addItems(speeds)    
+    self.portstg.bps.addItems(speeds)    
     self.speedlist=speeds
 
-    self.stg.bpslabel.setBuddy(self.stg.bps)
-    stglayout.addWidget(self.stg.bpslabel,1,0,1,1)
-    stglayout.addWidget(self.stg.bps,1,2,1,3)
+    self.portstg.bpslabel.setBuddy(self.portstg.bps)
+    stglayout.addWidget(self.portstg.bpslabel,1,0,1,1)
+    stglayout.addWidget(self.portstg.bps,1,2,1,3)
 
     self.__setSerial()
-    self.connect(self.stg.bps, QtCore.SIGNAL('currentIndexChanged()'), self.__serialParamChanged)
-    self.connect(self.stg.bps, QtCore.SIGNAL('released()'), self.__serialParamChanged)
-    self.connect(self.stg.bps, QtCore.SIGNAL('released()'), self.__serialParamChanged)
-    self.connect(self.stg.portselect, QtCore.SIGNAL('currentIndexChanged()'), self.__serialParamChanged)
+    self.connect(self.portstg.bps, QtCore.SIGNAL('currentIndexChanged()'), self.__serialParamChanged)
+    self.connect(self.portstg.bps, QtCore.SIGNAL('released()'), self.__serialParamChanged)
+    self.connect(self.portstg.bps, QtCore.SIGNAL('released()'), self.__serialParamChanged)
+    self.connect(self.portstg.portselect, QtCore.SIGNAL('currentIndexChanged()'), self.__serialParamChanged)
 
 
 
     # Flags
-    self.stg.trace = QtGui.QRadioButton('Trace', self.stg)
-    self.stg.trace.setAutoExclusive(False)
-    stglayout.addWidget(self.stg.trace,2,0)
-    self.stg.ack = QtGui.QRadioButton('Acks', self.stg)
-    self.stg.ack.setAutoExclusive(False)
-    stglayout.addWidget(self.stg.ack,2,1)
-    self.stg.netsrv = QtGui.QRadioButton('Net Server', self.stg)
-    self.stg.netsrv.setAutoExclusive(False)
-    stglayout.addWidget(self.stg.netsrv,2,2)
-    self.stg.netcli = QtGui.QRadioButton('Net Client', self.stg)
-    self.stg.netcli.setAutoExclusive(False)
-    stglayout.addWidget(self.stg.netcli,2,3)
+    self.portstg.trace = QtGui.QRadioButton('Trace', self.portstg)
+    self.portstg.trace.setAutoExclusive(False)
+    stglayout.addWidget(self.portstg.trace,2,0)
+    self.portstg.ack = QtGui.QRadioButton('Acks', self.portstg)
+    self.portstg.ack.setAutoExclusive(False)
+    stglayout.addWidget(self.portstg.ack,2,1)
+    self.portstg.netsrv = QtGui.QRadioButton('Net Server', self.portstg)
+    self.portstg.netsrv.setAutoExclusive(False)
+    stglayout.addWidget(self.portstg.netsrv,2,2)
+    self.portstg.netcli = QtGui.QRadioButton('Net Client', self.portstg)
+    self.portstg.netcli.setAutoExclusive(False)
+    stglayout.addWidget(self.portstg.netcli,2,3)
 
-    self.stg.connect = self.__button('Connect', self.stg, self.__connect, False )
-    stglayout.addWidget(self.stg.connect,5,0,1,2)
-    self.stg.connect.setAutoRepeat(False)
+    self.portstg.connect = self.__button('Connect', self.portstg, self.__connect, False )
+    stglayout.addWidget(self.portstg.connect,5,0,1,2)
+    self.portstg.connect.setAutoRepeat(False)
 
-    self.stg.disconnect = self.__button('DisConnect', self.stg, self.__disconnect, False )
-    stglayout.addWidget(self.stg.disconnect,5,2,1,2)
-    self.stg.disconnect.setAutoRepeat(False)
+    self.portstg.disconnect = self.__button('DisConnect', self.portstg, self.__disconnect, False )
+    stglayout.addWidget(self.portstg.disconnect,5,2,1,2)
+    self.portstg.disconnect.setAutoRepeat(False)
 
 
-    #self.tab.addTab(self.stg,"Settings")
-    self.addDockWidget(QtCore.Qt.LeftDockWidgetArea, self.stg.dock)
-    self.viewMenu.addAction(self.stg.dock.toggleViewAction())
-    self.stg.dock.hide()
+    #self.tab.addTab(self.portstg,"Settings")
+    self.addDockWidget(QtCore.Qt.LeftDockWidgetArea, self.portstg.dock)
+    self.viewMenu.addAction(self.portstg.dock.toggleViewAction())
+    self.portstg.dock.hide()
 
   def __setSerial(self):
 
     if (self.bmf != None) and (self.bmf.dev != None):
-       self.stg.portselect.setCurrentIndex(self.portslist.index(self.bmf.dev))
-       self.stg.bps.setCurrentIndex( self.speedlist.index(str(self.bmf.speed)))
+       self.portstg.portselect.setCurrentIndex(self.portslist.index(self.bmf.dev))
+       self.portstg.bps.setCurrentIndex( self.speedlist.index(str(self.bmf.speed)))
 
-       self.stg.trace.setChecked(self.bmf.flags  & 0x10) 
-       self.stg.ack.setChecked(self.bmf.flags  & 0x02)
-       self.stg.netsrv.setChecked(self.bmf.flags & 0x04)
-       self.stg.netcli.setChecked(self.bmf.flags & 0x08)
+       self.portstg.trace.setChecked(self.bmf.flags  & 0x10) 
+       self.portstg.ack.setChecked(self.bmf.flags  & 0x02)
+       self.portstg.netsrv.setChecked(self.bmf.flags & 0x04)
+       self.portstg.netcli.setChecked(self.bmf.flags & 0x08)
 
     else:
-        self.stg.bps.setCurrentIndex( 6 ) # ought to be 38400
+        self.portstg.bps.setCurrentIndex( 6 ) # ought to be 38400
 
 
 
@@ -772,15 +773,11 @@ class GUI(QtGui.QMainWindow):
     tstlayout.addWidget(self.tst.hexedit,0,1)
     self.connect(self.tst.hexedit, QtCore.SIGNAL('returnPressed()'), self.__sendhex)
 
-
-    self.tst.dt = self.__button('Send Hex', self.tst, self.__sendhex, False )
+    self.tst.dt = self.__button('DisplayTest', self.tst, self.exercise, False )
     tstlayout.addWidget(self.tst.dt,1,0)
 
-    self.tst.dt = self.__button('DisplayTest', self.tst, self.exercise, False )
-    tstlayout.addWidget(self.tst.dt,2,0)
-
     self.tst.dc = self.__button('Clear', self.tst, self.__clear, False )
-    tstlayout.addWidget(self.tst.dc,2,1)
+    tstlayout.addWidget(self.tst.dc,1,1)
 
     #self.tab.addTab(self.tst,"Testing")
     self.addDockWidget(QtCore.Qt.LeftDockWidgetArea, self.tst.dock)
