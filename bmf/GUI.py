@@ -541,6 +541,24 @@ class GUI(QtGui.QMainWindow):
 
     self.flags = flags
 
+  def __initOptions(self):
+    """
+      popup dialog (dockable, but default out.)
+         -- log file location
+	 -- select font for char display
+	 -- select font for GUI.
+         -- select upload/download directory
+
+    """
+    self.options = QtGui.QWidget()
+    self.options.setObjectName("Options")
+
+    self.options.dock = QtGui.QDockWidget("Options",self)
+    self.options.dock.setObjectName('Options')
+    self.options.dock.setAllowedAreas( QtCore.Qt.AllDockWidgetAreas )
+    self.options.dock.setWidget(self.options)
+
+
 
   def __initSerialPortSettings(self):
     """
@@ -773,7 +791,7 @@ class GUI(QtGui.QMainWindow):
     tstlayout.addWidget(self.tst.hexedit,0,1)
     self.connect(self.tst.hexedit, QtCore.SIGNAL('returnPressed()'), self.__sendhex)
 
-    self.tst.dt = self.__button('DisplayTest', self.tst, self.exercise, False )
+    self.tst.dt = self.__button('Display Test', self.tst, self.exercise, False )
     tstlayout.addWidget(self.tst.dt,1,0)
 
     self.tst.dc = self.__button('Clear', self.tst, self.__clear, False )
@@ -787,7 +805,7 @@ class GUI(QtGui.QMainWindow):
 
 
   def __restore( self ):
-     try: 
+     if os.path.exists('obmf.sav'):
        statefile = open('obmf.sav', 'r')
        #state = statefile.read()
        self.bmf.dev = pickle.load(statefile)
@@ -796,9 +814,10 @@ class GUI(QtGui.QMainWindow):
        self.bmf.flags=self.flags
        self.__setSerial()
        self.guistate = pickle.load(statefile)
+       self.charDisplayWindow.myfont.fromString(pickle.load(statefile))
+       self.resize(pickle.load(statefile), pickle.load(statefile))
+       self.move(pickle.load(statefile))
        statefile.close()
-     except:
-       return
 
   def __save( self ):
      
@@ -815,6 +834,12 @@ class GUI(QtGui.QMainWindow):
         pickle.dump(None,statefile)
 
      pickle.dump(guistate,statefile)
+     frn = self.charDisplayWindow.myfont.toString()
+     pickle.dump(frn,statefile)
+     pickle.dump(self.width(),statefile)
+     pickle.dump(self.height(),statefile)
+     pickle.dump(self.pos(),statefile)
+    
      statefile.close()
 
   def __exit( self ):
@@ -835,16 +860,36 @@ class GUI(QtGui.QMainWindow):
      self.charDisplayWindow.update()
      
 
+  def exerciseHello(self):
+   
+     self.charDisplay.writeStringXY(0,self.exy, 'i'*20 )
+     self.charDisplay.writeStringXY(self.exx,self.exy, 
+       u'\u250f' + u'\u2501'*5 + u'\u2513')
+     self.charDisplay.writeStringXY(0,self.exy+1, 'w'*20 )
+     self.charDisplay.writeStringXY(self.exx,self.exy+1,
+       u'\u2503' +"Hello" + u'\u2503' )
+     self.charDisplay.writeStringXY(0,self.exy+2, u'\u2191'*20 )
+     self.charDisplay.writeStringXY(self.exx,self.exy+2, 
+       u'\u2517' + u'\u2501'*5 + u'\u251b')
+
   def exercise( self ):
      """
         test the character addressable display by drawing in random ways.
 
      """
-     self.charDisplay.writeStringXY(0,0, "0123456789012345678901234567890123456789012345678")
-     self.charDisplay.writeStringXY(self.exx,self.exy,"Hello")
+     self.charDisplay.writeStringXY(0,0, "0123456789"*8)
+     self.charDisplay.writeStringXY( \
+	0, 1, "First row row above %s" % (u'\u2191'*8) )
 
      self.exy=random.randint(0,self.charDisplay.rows-1)
      self.exx=random.randint(0,self.charDisplay.columns-1)
+
+     self.exerciseHello()
+
+     self.charDisplay.writeStringXY( \
+	0, self.charDisplay.rows-2, "Last row below %s" % (u'\u2193'*8) )
+     self.charDisplay.writeStringXY( \
+	0, self.charDisplay.rows-1, "0123456789"*8)
 
      self.charDisplayWindow.update()
 
@@ -913,8 +958,6 @@ class GUI(QtGui.QMainWindow):
      self.viewMenu.addAction(save)
      self.connect(save, QtCore.SIGNAL('triggered()'), self.__save)
 
- 
-     #self.show()
      self.__restore()
      self.__setSerial()
      self.setCentralWidget(self.charDisplayWindow)

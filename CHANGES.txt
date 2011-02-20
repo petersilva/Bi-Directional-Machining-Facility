@@ -5,6 +5,7 @@ WORKING ON:
 
 TODO:
 
+  -- add mouseevents in char display.
   -- logfile support not general yet.
   -- GUI save/restore bug: doesn't seem to save/restore the size of the main window?
   -- declarative UI? or CSS or ...

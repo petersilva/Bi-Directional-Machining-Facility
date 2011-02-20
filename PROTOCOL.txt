@@ -149,6 +149,7 @@ Other opcodes are:
      a series of intel-hex encoded records of data from the named file.
      initial destination address of data given by Start.
 
+  88 - MousePress
   90 -> 9f - update counters 0 through f.
      <Hi>,<Lo>
 
