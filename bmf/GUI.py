@@ -111,11 +111,6 @@ class GUI(QtGui.QMainWindow):
     """
         Actually do the work to update the GUI, not just the internal counters.
     """
-    #if self.connected:
-    #   for i in range(0,0xf):
-    #      if self.bmf.counter_display[i] != None:
-    #          self.bmf.display.writeStringXY( self.bmf.counter_display[i][0], self.bmf.counter_display[i][1],
-    #            "%2d.%03d" % ( self.bmf.counters[i] / 1000 , self.bmf.counters[i] % 1000 ))
 
     self.counters.qw.axci.display(int(self.bmf.counters[0]/1000))
     self.counters.qw.axcd.display(int(self.bmf.counters[0]%1000))
@@ -147,11 +142,8 @@ class GUI(QtGui.QMainWindow):
 
     self.__serialParamChanged(None)
 
-
-    self.bmf = bmf.bmf(dev=self.bmf.dev,speed=self.bmf.speed,flags=self.flags,
-	     msgcallback=self.__logit, display=self.charDisplay )
-
     self.bmf.connect()
+    self.connected=True
 
     # this button cannot be overridden.
     self.bmf.labels[0x2f]='Send File'
@@ -483,10 +475,10 @@ class GUI(QtGui.QMainWindow):
     # like reading the serial port...
 
     gui_update_next_time += max(0.1,2*gui_update_average)
-    if ( gui_update_total_count % 300 ) == 100:
-       self.__logit("guiupdate: this one took: %f" % duration )
-       self.__logit("guiupdate took: total_time=%f, count=%d, average=%.5f" % \
-              ( gui_update_total_time, gui_update_total_count, gui_update_average ))
+    #if ( gui_update_total_count % 300 ) == 100:
+    #   self.__logit("guiupdate: this one took: %f" % duration )
+    #   self.__logit("guiupdate took: total_time=%f, count=%d, average=%.5f" % \
+    #          ( gui_update_total_time, gui_update_total_count, gui_update_average ))
 
 
   def __routineUpdate(self):
@@ -521,23 +513,35 @@ class GUI(QtGui.QMainWindow):
       last = self.portstg.portselect.count()    
       self.portstg.portselect.addItem(op)    
       self.portstg.portselect.setCurrentIndex(last)
-    
+      self.__serialDevChanged(None) 
+
+
+  def __serialDevChanged(self,arg):
+    print "serialDevChanged to: %s" % str(self.portstg.portselect.currentText())
+    setattr(self.bmf,"dev",str(self.portstg.portselect.currentText()))
+    self.__serialParamChanged(arg)
+
+  def __serialBpsChanged(self,arg):
+    setattr(self.bmf, "speed", int(str(self.portstg.bps.currentText())))
+    self.__serialParamChanged(arg)
+
 
 
   def __serialParamChanged(self,arg):
 
-    self.bmf.dev = str(self.portstg.portselect.currentText())
-    self.bmf.speed =  int(str(self.portstg.bps.currentText()))
 
     flags = 0 
     if self.portstg.trace.isChecked() : 
-        flags = flags | 0x10
+        flags = flags | bmf.FLAG_TRACE
     if self.portstg.ack.isChecked(): 
-        flags = flags | 0x02
+        flags = flags | bmf.FLAG_KEY_ACK
     if self.portstg.netsrv.isChecked():
-        flags = flags | 0x04
+        flags = flags | bmf.FLAG_NET_SERVER
     if self.portstg.netcli.isChecked():
-        flags = flags | 0x08
+        flags = flags | bmf.FLAG_NET_CLIENT
+
+    self.bmf.flags = flags
+    setattr(self.bmf, "flags", flags)
 
     self.flags = flags
 
@@ -562,7 +566,7 @@ class GUI(QtGui.QMainWindow):
 
   def __initSerialPortSettings(self):
     """
-        initialize settings keypad.
+        initialize Port settings keypad.
 
     """
     self.portstg = QtGui.QWidget()
@@ -574,9 +578,6 @@ class GUI(QtGui.QMainWindow):
     self.portstg.dock.setWidget(self.portstg)
 
     stglayout=QtGui.QGridLayout(self.portstg)
-    #stglayout.setColumnStretch(0,19)
-    #stglayout.setColumnStretch(1,1)
-    #stglayout.setVerticalSpacing(4)
 
     # Port
     import platform
@@ -594,9 +595,6 @@ class GUI(QtGui.QMainWindow):
        ports=glob.glob("/dev/ttyS*") + glob.glob("/dev/ttyUSB*")
 
     
-    if (self.bmf != None) and (self.bmf.dev != None):
-      ports.append(self.bmf.dev)
-       
     if "localhost:50007" not in ports:
       ports.append("localhost:50007")
 
@@ -626,11 +624,11 @@ class GUI(QtGui.QMainWindow):
     stglayout.addWidget(self.portstg.bpslabel,1,0,1,1)
     stglayout.addWidget(self.portstg.bps,1,2,1,3)
 
-    self.__setSerial()
-    self.connect(self.portstg.bps, QtCore.SIGNAL('currentIndexChanged()'), self.__serialParamChanged)
-    self.connect(self.portstg.bps, QtCore.SIGNAL('released()'), self.__serialParamChanged)
-    self.connect(self.portstg.bps, QtCore.SIGNAL('released()'), self.__serialParamChanged)
-    self.connect(self.portstg.portselect, QtCore.SIGNAL('currentIndexChanged()'), self.__serialParamChanged)
+    #self.__setSerial()
+    self.connect(self.portstg.bps, QtCore.SIGNAL('currentIndexChanged()'), self.__serialBpsChanged)
+    self.connect(self.portstg.bps, QtCore.SIGNAL('released()'), self.__serialBpsChanged)
+    self.connect(self.portstg.bps, QtCore.SIGNAL('released()'), self.__serialBpsChanged)
+    self.connect(self.portstg.portselect, QtCore.SIGNAL('currentIndexChanged()'), self.__serialDevChanged)
 
 
 
@@ -664,14 +662,21 @@ class GUI(QtGui.QMainWindow):
 
   def __setSerial(self):
 
-    if (self.bmf != None) and (self.bmf.dev != None):
-       self.portstg.portselect.setCurrentIndex(self.portslist.index(self.bmf.dev))
-       self.portstg.bps.setCurrentIndex( self.speedlist.index(str(self.bmf.speed)))
+    if self.bmf.dev != None:
+       if not self.bmf.dev in self.portslist:
+           self.portslist.append(self.bmf.dev)
+           self.portstg.portselect.addItem(self.bmf.dev)    
 
-       self.portstg.trace.setChecked(self.bmf.flags  & 0x10) 
-       self.portstg.ack.setChecked(self.bmf.flags  & 0x02)
-       self.portstg.netsrv.setChecked(self.bmf.flags & 0x04)
-       self.portstg.netcli.setChecked(self.bmf.flags & 0x08)
+       self.portstg.portselect.setCurrentIndex(self.portslist.index(self.bmf.dev))
+
+       #FIXME... on startup this is None sometimes, very strange.
+       if self.bmf.speed != None: 
+          self.portstg.bps.setCurrentIndex( self.speedlist.index(str(self.bmf.speed)))
+
+       self.portstg.trace.setChecked(self.bmf.flags  & bmf.FLAG_TRACE) 
+       self.portstg.ack.setChecked(self.bmf.flags  & bmf.FLAG_KEY_ACK)
+       self.portstg.netsrv.setChecked(self.bmf.flags & bmf.FLAG_NET_SERVER)
+       self.portstg.netcli.setChecked(self.bmf.flags & bmf.FLAG_NET_CLIENT)
 
     else:
         self.portstg.bps.setCurrentIndex( 6 ) # ought to be 38400
@@ -808,11 +813,15 @@ class GUI(QtGui.QMainWindow):
      if os.path.exists('obmf.sav'):
        statefile = open('obmf.sav', 'r')
        #state = statefile.read()
-       self.bmf.dev = pickle.load(statefile)
-       self.bmf.speed = pickle.load(statefile)
-       self.flags = pickle.load(statefile)
-       self.bmf.flags=self.flags
-       self.__setSerial()
+       dev = pickle.load(statefile)
+       speed = pickle.load(statefile)
+       flags = pickle.load(statefile)
+
+       self.flags=flags
+       setattr(self.bmf,"dev",dev)
+       setattr(self.bmf,"speed",speed)
+       setattr(self.bmf,"flags",flags)
+
        self.guistate = pickle.load(statefile)
        self.charDisplayWindow.myfont.fromString(pickle.load(statefile))
        self.resize(pickle.load(statefile), pickle.load(statefile))
@@ -864,13 +873,14 @@ class GUI(QtGui.QMainWindow):
    
      self.charDisplay.writeStringXY(0,self.exy, 'i'*20 )
      self.charDisplay.writeStringXY(self.exx,self.exy, 
-       u'\u250f' + u'\u2501'*5 + u'\u2513')
+       u'\u250f' + u'\u2500'*5 + u'\u2513')
      self.charDisplay.writeStringXY(0,self.exy+1, 'w'*20 )
      self.charDisplay.writeStringXY(self.exx,self.exy+1,
        u'\u2503' +"Hello" + u'\u2503' )
      self.charDisplay.writeStringXY(0,self.exy+2, u'\u2191'*20 )
      self.charDisplay.writeStringXY(self.exx,self.exy+2, 
-       u'\u2517' + u'\u2501'*5 + u'\u251b')
+       u'\u2517' + u'\u2500'*5 + u'\u251b')
+     self.charDisplay.writeStringXY(self.exx+1,self.exy+3, u'\u60a8\u597d')
 
   def exercise( self ):
      """
@@ -899,6 +909,8 @@ class GUI(QtGui.QMainWindow):
 
      QtGui.QMainWindow.__init__(self)
  
+     self.bmf=bmf
+
      self.exx=4
      self.exy=4
 
@@ -920,18 +932,16 @@ class GUI(QtGui.QMainWindow):
      self.log=LogDisplay.LogWindow(self.__logUI,self)
      #self.__logit("Startup...")
 
-     self.bmf=bmf
      self.guistate=None
 
      self.charDisplay=CharDisplay.CharDisplay(self.__logit) 
      self.charDisplayWindow=CharDisplayWindow.CharDisplayWindow(self.__logit,self.charDisplay)
 
-     if self.connected:
-           self.bmf.display = self.charDisplay
+     setattr(self.bmf, "display", self.charDisplay)
 
      self.counters=CounterDisplay.CounterDisplay(self)
 
-     self.setMinimumSize(900, 600)
+     self.setMinimumSize(400, 300)
      self.setSizePolicy( QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Expanding )
 
      self.setWindowTitle('BMF - Panel')
@@ -959,22 +969,22 @@ class GUI(QtGui.QMainWindow):
      self.connect(save, QtCore.SIGNAL('triggered()'), self.__save)
 
      self.__restore()
-     self.__setSerial()
+
      self.setCentralWidget(self.charDisplayWindow)
 
      if self.guistate != None:
          self.restoreState(self.guistate)
+
+     self.logfile=open("bmf.log","w")
+     self.__setSerial()
+
+     #if ( self.bmf.dev != None ) and not self.connected:
+     #   self.__connect()
 
      self.update_in_progress=False
      self.updateTimer = QtCore.QTimer(self)
      self.connect(self.updateTimer, QtCore.SIGNAL("timeout()"), self.__routineUpdate )
      self.updateTimer.setInterval(50)
      self.updateTimer.start()
-
-     self.logfile=open("bmf.log","w")
-
-     if self.bmf.dev != None:
-        self.__connect()
-        self.connected = True
 
      self.__logit("Ready")

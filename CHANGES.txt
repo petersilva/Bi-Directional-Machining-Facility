@@ -1,13 +1,12 @@
 
 WORKING ON:
-  -- five digits with a . and all 0's. pain in the butt. code size already tripled, with no leading digits.
-
+  -- add mouseevents in char display.
+  -- bug in font dialog causes system crash (Linux only.)
 
 TODO:
 
-  -- add mouseevents in char display.
+  -- five digits with a . and all 0's. pain in the butt. code size already tripled, with no leading digits.
   -- logfile support not general yet.
-  -- GUI save/restore bug: doesn't seem to save/restore the size of the main window?
   -- declarative UI? or CSS or ...
   -- Replace literal op-codes with consants OC_
   -- set cwd ?
@@ -23,6 +22,14 @@ TODO:
         -- maybe z80 will log too?
   -- have routine updates make radiobuttons symmetrical.
   -- have toggles stay depressed when appropriiate.
+
+2011/09/10:
+  -- have startup work properly... using command line or reading from saved state.
+  -- corrected vertical spacing in character display by using actual font height.
+
+2011/02/20:
+  -- Font Selection dialog in Character mapped display
+  -- GUI save/restore bug: doesn't seem to save/restore the size of the main window?
 
 
 2011/01/23:

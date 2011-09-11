@@ -115,6 +115,7 @@ class bmf:
      if flags != None:
        self.flags = int(flags)
 
+     print("__init__ self.flags=%d, dev=%s" % (self.flags,self.dev))
      #self.flags = flags | FLAG_TRACE
      self.msgcallback=msgcallback
      self.display=display
@@ -177,12 +178,12 @@ class bmf:
      #   self.connect()
 
       
-
   def connect(self):
-     self.msgcallback("self.flags=%d" % self.flags)
+     print("connect... self.flags=%d, dev=%s" % (self.flags,self.dev))
+     self.msgcallback("self.flags=%d, dev=%s" % (self.flags,self.dev))
      if self.flags & FLAG_WRITE_FILE:
-        self.msgcallback( "simulation by writing to: %s" % dev )
-        self.serial = open(dev,'w')
+        self.msgcallback( "simulation by writing to: %s" % self.dev )
+        self.serial = open(self.dev,'w')
      elif self.flags & (FLAG_NET_SERVER|FLAG_NET_CLIENT):
        if self.flags & FLAG_NET_SERVER:
            self.sockserv()
@@ -250,6 +251,7 @@ class bmf:
          initialize a socket client (connect to a server.)
 
      """
+     print "sockcli=%s\n" % self.dev
      host, port = self.dev.split(':')
      
      s = None
@@ -558,6 +560,7 @@ class bmf:
   def readcmd_key(self,cmd):
         (keyc, evt, lf) = self.__readn(3)
         key=ord(keyc)
+        self.msgcallback( "key: %02x,%02x received\n" % ( key, ord(evt)))
         print "key: %02x,%02x received\n" % ( key, ord(evt))  
         self.opCodeBindings[key][1](key)
 
@@ -687,6 +690,14 @@ class bmf:
          )
      
 
+  def sendTouchXY(self,x,y,buf):
+      """
+         send a touch to embedded system.
+
+      """
+      self.writecmd( 
+          struct.pack( "BBB", 0x88, (x|0x80), (y|0x80))
+          + struct.pack("B", TRIGGER_INTERRUPT ))
 
   def sendStringXY(self,x,y,buf):
       """
@@ -730,15 +741,13 @@ class bmf:
   def sendPullFile(self,filename,start,count):
       """
         send a request for the peer to ship me a file that it knows.
-        data will be sent in intel hex format, which includes memory locations.  So have
-        the locations begin at start, and have count bytes sent.
-        FIXME: not implemented yet.
+        data will be sent in intel hex format, which includes memory 
+        locations.  So have the locations begin at start, and have 
+        count bytes sent.
       """
       self.writecmd( 
           struct.pack( "BBBBB", 0x87, start>>8, start&0xff, count>>8, count&0xff)
           +  filename + struct.pack("B", TRIGGER_INTERRUPT ))
-      #self.writecmd( "%c%c%c%c%c%s\n" % ( chr(0x87), chr(start>>8), chr(start&0xff),
-      #        chr(count>>8), chr(count&0xff), filename ))
       return
 
   def sendBulkStart(self,filename):

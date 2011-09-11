@@ -33,14 +33,14 @@ class CharDisplayWindow(QtGui.QWidget):
      if self.display == None:
         return
 
-     xmag=self.width()/self.display.columns
-     ymag=self.height()/self.display.rows
-
      path = QtGui.QPainterPath()
      painter = QtGui.QPainter(self)
      painter.setFont(self.myfont)
-     painter.setBackgroundMode(QtCore.Qt.OpaqueMode)  # default is TransparentMode
-     # FIXME: perhaps painter.setStretch(... some function of xmag... ) to fill window...
+     painter.setBackgroundMode(QtCore.Qt.OpaqueMode) # default: TransparentMode
+
+     # new version: make character spacing natural.
+     fn = QtGui.QFontMetrics(self.myfont)
+     ymag = fn.height()
 
 
      # print all the characters on the "screen."
@@ -56,15 +56,6 @@ class CharDisplayWindow(QtGui.QWidget):
   def setDisplay(self,display):
      self.display = display
 
-  def resizeEvent(self,event):
-     # FIXME: crappy heuristic to get the font to fit in the window.
-     # need to select a monospaced / fixed character width font for co-ordinates to work.
-     xmag=self.width()/self.display.columns
-     ymag=self.height()/self.display.rows
-     self.myfont.setPixelSize(int(xmag*1.7)) 
-
-
-
   def mousePressEvent(self,e):
      if e.button() == QtCore.Qt.LeftButton: # send left clicks to device
         # FIXME, extend protocol to send mouse events.
@@ -74,10 +65,10 @@ class CharDisplayWindow(QtGui.QWidget):
            e.button()      
         print 'left button!'
      elif e.button() == QtCore.Qt.RightButton: # post font menu for right click.
+        print 'right button!'
         f,ok = QtGui.QFontDialog.getFont(self.myfont)
         if ok :
            self.myfont=f
-           self.resizeEvent(None)
 
 
   def __init__(self,log,display=None,parent=None):

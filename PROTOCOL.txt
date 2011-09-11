@@ -150,6 +150,11 @@ Other opcodes are:
      initial destination address of data given by Start.
 
   88 - MousePress
+     <i>,<j>,LF
+     indicate column and row where a mouse click has occurred.
+     encoding is similar to write string command.
+ 
+
   90 -> 9f - update counters 0 through f.
      <Hi>,<Lo>
 
